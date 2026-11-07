@@ -1,9 +1,9 @@
 ﻿using EpickyORM.Core.Attributes;
+using EpickyORM.Core.Drivers.SQLite;
 using EpickyORM.Core.Structures;
 
 class MyContext : DbContext
 {
-    // všechno co je property je automaticky entita
     public Predmet Predmets { get; set; }
     public Teacher Teachers { get; set; }
 }
@@ -29,7 +29,7 @@ public class Program
 {
     public static void Main()
     {
-        var db = new Database<MyContext>();
-        db.
+        var db = new Database<MyContext>(new SqliteDatabaseDriver(""));
+        
     }
 }

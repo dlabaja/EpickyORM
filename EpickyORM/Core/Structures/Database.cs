@@ -1,23 +1,17 @@
-﻿namespace EpickyORM.Core.Structures;
+﻿using EpickyORM.Core.Drivers;
 
-public class Database<D> : IDisposable where D : DbContext
+namespace EpickyORM.Core.Structures;
+
+public class Database<T> where T : DbContext
 {
-    private string _connectionString;
-    
-    public Database(string connectionString)
+    private DatabaseDriver _driver;
+
+    public Database(DatabaseDriver driver)
     {
-        _connectionString = connectionString;
+        _driver = driver;
     }
 
-    public void Connect()
+    public void SaveChanges()
     {
-        S
-    }
-
-    public string[] TableNames { get; }
-
-    public void Dispose()
-    {
-        // todo zavřít databázi
     }
 }

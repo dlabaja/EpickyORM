@@ -1,9 +1,6 @@
 namespace EpickyORM.Core.Structures;
 
-public class DbContext
+public abstract class DbContext
 {
-    public void SaveChanges()
-    {
-        
-    }
+    
 }

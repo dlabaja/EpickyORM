@@ -1,6 +1,8 @@
+using EpickyORM.Core.Structures;
+
 namespace EpickyORM.Core.Drivers;
 
-public abstract class DatabaseDriver : IDisposable
+public abstract class DatabaseDriver
 {
     protected readonly string ConnectionString;
 
@@ -9,18 +11,9 @@ public abstract class DatabaseDriver : IDisposable
         ConnectionString = connectionString;
     }
 
-    public abstract void Connect();
-
-    public abstract void Close();
+    protected abstract void Execute(string sql);
     
-    public abstract void CreateTable(string name);
+    public abstract void CreateTable(Table table);
     
-    public abstract void DropTable(string name);
-    
-    
-
-    public void Dispose()
-    {
-        Close();
-    }
+    public abstract void DropTable(Table table);
 }

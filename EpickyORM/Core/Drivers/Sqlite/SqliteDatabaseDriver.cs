@@ -1,33 +1,35 @@
+using EpickyORM.Core.Drivers.Sqlite;
+using EpickyORM.Core.Structures;
 using Microsoft.Data.Sqlite;
 
 namespace EpickyORM.Core.Drivers.SQLite;
 
 public class SqliteDatabaseDriver : DatabaseDriver
 {
-    private readonly SqliteConnection _connection;
+    private CommandGenerator _generator = new SqliteCommandGenerator();
     
     public SqliteDatabaseDriver(string connectionString) : base(connectionString)
     {
-        _connection = new SqliteConnection(ConnectionString);
+    }
+    
+    // https://www.sqlitetutorial.net/sqlite-csharp/create-tables/
+    // connection by se měl automaticky poolovat, takže můžu udělat jeden na každej příkaz
+    protected override void Execute(string sql)
+    {
+        using var connection = new SqliteConnection(ConnectionString);
+        connection.Open();
+
+        using var command = new SqliteCommand(sql, connection);
+        command.ExecuteNonQuery();
     }
 
-    public override void Connect()
+    public override void CreateTable(Table table)
     {
-        _connection.Open();
+        Execute(_generator.CreateTable(table));
     }
 
-    public override void Close()
+    public override void DropTable(Table table)
     {
-        _connection.Close();
-    }
-
-    public override void CreateTable(string name)
-    {
-        throw new NotImplementedException();
-    }
-
-    public override void DropTable(string name)
-    {
-        throw new NotImplementedException();
+        Execute(_generator.DropTable(table));
     }
 }
