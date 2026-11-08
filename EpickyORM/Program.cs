@@ -4,8 +4,8 @@ using EpickyORM.Core.Structures;
 
 class MyContext : DbContext
 {
-    public DbSet<Predmet> Predmets { get; set; } = new DbSet<Predmet>();
-    public DbSet<Teacher> Teachers { get; set; } = new DbSet<Teacher>();
+    public DbSet<Predmet> Predmets { get; }
+    public DbSet<Teacher> Teachers { get; }
 }
 
 class Predmet
