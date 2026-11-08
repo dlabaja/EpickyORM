@@ -10,8 +10,4 @@ public class Database<T> where T : DbContext
     {
         _driver = driver;
     }
-
-    public void SaveChanges()
-    {
-    }
 }

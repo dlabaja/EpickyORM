@@ -1,7 +1,7 @@
 namespace EpickyORM.Core.Attributes;
 
 [AttributeUsage(AttributeTargets.Field)]
-public class Include : Attribute
+public sealed class Include : Attribute
 {
     
 }

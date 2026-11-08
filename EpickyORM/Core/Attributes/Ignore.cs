@@ -1,7 +1,7 @@
 namespace EpickyORM.Core.Attributes;
 
 [AttributeUsage(AttributeTargets.Property)]
-public class Ignore : Attribute
+public sealed class Ignore : Attribute
 {
     
 }
