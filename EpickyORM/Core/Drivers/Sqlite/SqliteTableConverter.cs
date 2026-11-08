@@ -42,6 +42,21 @@ public class SqliteTableConverter : TableConverter
 
     public override string ConvertTable(Table table)
     {
-        return $"{table.Name}({string.Join(", ", table.Schema.SchemaAttributes.Select(ConvertTableAttribute))})";
+        return $"{table.Name} ({string.Join(", ", table.Schema.SchemaAttributes.Select(ConvertTableAttribute))})";
+    }
+
+    public override string GetSchemaArray(Table table)
+    {
+        return $"({string.Join(", ", table.Schema.SchemaAttributes.Select(x => x.Name))})";
+    }
+
+    public override string GetValuesArray(Table table, Record record)
+    {
+        return $"({string.Join(", ", table.GetRecordValues(record))})";
+    }
+    
+    public override string GetMultipleValuesArray(Table table, List<Record> records)
+    {
+        return $"{string.Join(", ", records.Select(x => GetValuesArray(table, x)))}";
     }
 }

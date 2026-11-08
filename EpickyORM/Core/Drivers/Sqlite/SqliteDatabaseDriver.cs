@@ -23,9 +23,9 @@ public class SqliteDatabaseDriver : DatabaseDriver
         command.ExecuteNonQuery();
     }
 
-    public override void CreateTable(Table table)
+    public override void TryCreateTable(Table table)
     {
-        Execute(_generator.CreateTable(table));
+        Execute(_generator.TryCreateTable(table));
     }
 
     public override void DropTable(Table table)
@@ -33,8 +33,8 @@ public class SqliteDatabaseDriver : DatabaseDriver
         Execute(_generator.DropTable(table));
     }
 
-    public override void AddToTable(Table table)
+    public override void Insert(Table table, List<Record> records)
     {
-        throw new NotImplementedException();
+        Execute(_generator.Insert(table, records));
     }
 }

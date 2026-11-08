@@ -1,13 +1,25 @@
+using EpickyORM.Core.Drivers;
+
 namespace EpickyORM.Core.Structures;
 
 public abstract class DbContext
 {
-    private ChangeTracker _changeTracker = new ChangeTracker();
+    private readonly ChangeTracker _changeTracker;
+    private bool triedCreatingTables = false;
+
+    // poprvé používám internal, díky tomu můžu Driver nastavit z databáze ale nikdo mimo namespace se k němu nedostane
+    internal DatabaseDriver? Driver { get; set; }
 
     protected DbContext()
     {
         CheckDbSets();
         CreateDbSets();
+
+        _changeTracker =
+            new ChangeTracker(GetType().GetProperties()
+                .Select(x => x.PropertyType.GetGenericArguments()[0])
+                .ToList());
+        
         RegisterTracker();
     }
 
@@ -27,15 +39,24 @@ public abstract class DbContext
             throw new Exception($"Properties of {GetType()} must have only get accessors.");
         }
     }
-    
+
     private void CreateDbSets()
     {
         var properties = GetType().GetProperties();
         var invalidProperties = properties
-            .Where(x => x.PropertyType != typeof(DbSet<>));
+            .Where(x => !x.PropertyType.IsGenericType || x.PropertyType != typeof(DbSet<>));
         if (invalidProperties.Any())
         {
             throw new Exception($"Class {GetType()} can only have properties of DbSet<class> type.");
+        }
+
+        foreach (var property in properties)
+        {
+            var type = property.PropertyType.GetGenericArguments()[0];
+            var dbSet = typeof(DbSet<>).MakeGenericType(type);
+            // tvorba instance, uložím ji do Contextu
+            var instance = Activator.CreateInstance(dbSet);
+            property.SetValue(this, instance);
         }
     }
 
@@ -58,6 +79,25 @@ public abstract class DbContext
 
     public void SaveChanges()
     {
-        // todo projdi changeTracker, vygeneruj příkaz a pošli to driveru
+        if (Driver == null)
+        {
+            throw new Exception(
+                $"No Database driver found - was the context {GetType()} registered using Database constructor?");
+        }
+
+        if (!triedCreatingTables)
+        {
+            foreach (var table in _changeTracker.Tables)
+            {
+                Driver.TryCreateTable(table);
+            }
+            triedCreatingTables = true;
+        }
+        
+        foreach (var table in _changeTracker.Tables)
+        {
+            Driver.Insert(table, table.GetRecords());
+        }
+        _changeTracker.Flush();
     }
 }

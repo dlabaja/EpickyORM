@@ -30,6 +30,9 @@ public class Program
     public static void Main()
     {
         var db = new Database<MyContext>(new SqliteDatabaseDriver(""));
-        
+        var predmet = new Predmet();
+        db.Context.Predmets.Add(predmet);
+        predmet.Code = "KMI";
+        db.Context.SaveChanges();
     }
 }

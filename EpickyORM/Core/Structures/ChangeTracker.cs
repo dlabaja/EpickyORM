@@ -1,25 +1,38 @@
-using EpickyORM.Core.Enum;
-
 namespace EpickyORM.Core.Structures;
 
 public class ChangeTracker
 {
-    private Dictionary<object, RecordAction> _trackedChanges = new Dictionary<object, RecordAction>();
+    private Dictionary<Type, Table> _tables = new();
+
+    public List<Table> Tables => _tables.Values.ToList();
+
+    public ChangeTracker(List<Type> types)
+    {
+        GenerateTables(types);
+    }
+
+    private void GenerateTables(List<Type> types)
+    {
+        foreach (var type in types)
+        {
+            _tables.Add(type, new Table(type));
+        }
+    }
     
     public void Add(Record record)
     {
-        if (_trackedChanges.ContainsKey(record.Instance))
+        if (!_tables.ContainsKey(record.Type))
         {
-            _trackedChanges[record.Instance] = action;
-            return;
+            throw new Exception($"There is no table for record of type {record.Type}");
         }
-        _trackedChanges.Add(record, action);
+        _tables[record.Type].Add(record);
     }
 
-    public List<KeyValuePair<object, RecordAction>> Flush()
+    public void Flush()
     {
-        var list = _trackedChanges.ToList();
-        _trackedChanges.Clear();
-        return list;
+        foreach (var table in _tables.Values)
+        {
+            table.Flush();   
+        }
     }
 }

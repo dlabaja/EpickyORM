@@ -13,9 +13,9 @@ public abstract class DatabaseDriver
 
     protected abstract void Execute(string sql);
     
-    public abstract void CreateTable(Table table);
+    public abstract void TryCreateTable(Table table);
     
     public abstract void DropTable(Table table);
 
-    public abstract void AddToTable(Table table);
+    public abstract void Insert(Table table, List<Record> records);
 }

@@ -1,5 +1,6 @@
 using System.Reflection;
 using EpickyORM.Core.Attributes;
+using EpickyORM.Core.Enum;
 using EpickyORM.Core.Utils;
 
 namespace EpickyORM.Core.Structures;
@@ -12,9 +13,9 @@ public class Table
     private Dictionary<SchemaAttribute, Func<object, object?>> _getters = new();
     private List<Record> _records = [];
     
-    public Table(object obj)
+    public Table(Type type)
     {
-        Type = obj.GetType();
+        Type = type;
         Name = Type.Name;
         Schema = GenerateSchema();
     }
@@ -42,13 +43,36 @@ public class Table
         return new Schema(schemaAttributes);
     }
 
+    public List<(SchemaAttribute x, object?)> GetRecordValues(Record record)
+    {
+        if (!FulfillsSchema(record))
+        {
+            throw new Exception($"Cannot get Record value - Record of type {record.Type} doesn't fullfill schema of {Type}");
+        }
+
+        return Schema.SchemaAttributes.Select(x => (x, _getters[x].Invoke(record.Instance))).ToList();
+    }
+
+    public bool FulfillsSchema(Record record)
+    {
+        return Type == record.Type;
+    }
+
     public void Add(Record record)
     {
         _records.Add(record);
     }
 
-    public void Clear()
+    public List<Record> GetRecords()
     {
-        _records.Clear();
+        return _records;
+    }
+
+    public void Flush()
+    {
+        foreach (var record in _records)
+        {
+            record.ResetAction();
+        }
     }
 }
