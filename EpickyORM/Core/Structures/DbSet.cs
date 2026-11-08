@@ -44,14 +44,8 @@ public class DbSet<T>
         
         var pk = GetPrimaryKey(instance)?.GetValue();
 
-        var record = new Record(instance, instance.GetType());
-        if (pk == null)
-        {
-            _changeTracker.Add(record, RecordAction.ADD);
-            return;
-        }
-        
-        _changeTracker.Add(record, RecordAction.UPDATE);
+        var record = new Record(instance, instance.GetType(), pk == null ? RecordAction.ADD : RecordAction.UPDATE);
+        _changeTracker.Add(record);
     }
 
     public void Remove(T instance)
@@ -64,7 +58,7 @@ public class DbSet<T>
         var pk = GetPrimaryKey(instance)?.GetValue();
         if (pk != null)
         {
-            var record = new Record(instance, instance.GetType());
+            //var record = new Record(instance, instance.GetType());
         }
     }
 }

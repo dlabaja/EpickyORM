@@ -6,7 +6,9 @@ public abstract class TableConverter
 {
     public abstract string ConvertType(TypeCode type);
 
-    public abstract string ConvertTableAttribute(TableAttribute tableAttribute);
+    public abstract string ConvertTableAttribute(SchemaAttribute schemaAttribute);
     
     public abstract string ConvertTable(Table table);
+    
+    
 }

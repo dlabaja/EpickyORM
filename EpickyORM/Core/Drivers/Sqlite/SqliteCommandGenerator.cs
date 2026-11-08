@@ -5,7 +5,7 @@ namespace EpickyORM.Core.Drivers.Sqlite;
 
 public class SqliteCommandGenerator : CommandGenerator
 {
-    private readonly SqliteTableConverter _converter = new SqliteTableConverter();
+    private readonly SqliteTableConverter _converter = new();
     
     public override string CreateTable(Table table)
     {

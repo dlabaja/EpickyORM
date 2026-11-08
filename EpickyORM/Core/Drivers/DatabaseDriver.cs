@@ -16,4 +16,6 @@ public abstract class DatabaseDriver
     public abstract void CreateTable(Table table);
     
     public abstract void DropTable(Table table);
+
+    public abstract void AddToTable(Table table);
 }

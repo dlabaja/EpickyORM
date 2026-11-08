@@ -6,7 +6,7 @@ public class ChangeTracker
 {
     private Dictionary<object, RecordAction> _trackedChanges = new Dictionary<object, RecordAction>();
     
-    public void Add(Record record, RecordAction action)
+    public void Add(Record record)
     {
         if (_trackedChanges.ContainsKey(record.Instance))
         {

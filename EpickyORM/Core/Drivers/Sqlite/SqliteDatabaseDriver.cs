@@ -32,4 +32,9 @@ public class SqliteDatabaseDriver : DatabaseDriver
     {
         Execute(_generator.DropTable(table));
     }
+
+    public override void AddToTable(Table table)
+    {
+        throw new NotImplementedException();
+    }
 }

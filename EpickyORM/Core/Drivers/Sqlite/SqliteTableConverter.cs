@@ -35,13 +35,13 @@ public class SqliteTableConverter : TableConverter
         }
     }
 
-    public override string ConvertTableAttribute(TableAttribute tableAttribute)
+    public override string ConvertTableAttribute(SchemaAttribute schemaAttribute)
     {
-        return $"{tableAttribute.Name.ToSnakeCase()} ${ConvertType(tableAttribute.Type)}";
+        return $"{schemaAttribute.Name.ToSnakeCase()} ${ConvertType(Type.GetTypeCode(schemaAttribute.Type))}";
     }
 
     public override string ConvertTable(Table table)
     {
-        return $"{table.Name}({string.Join(", ", table.TableAttributes.Select(ConvertTableAttribute))})";
+        return $"{table.Name}({string.Join(", ", table.Schema.SchemaAttributes.Select(ConvertTableAttribute))})";
     }
 }
