@@ -37,7 +37,8 @@ public class SqliteTableConverter : TableConverter
 
     public override string ConvertTableAttribute(SchemaAttribute schemaAttribute)
     {
-        return $"{schemaAttribute.Name.ToSnakeCase()} ${ConvertType(Type.GetTypeCode(schemaAttribute.Type))}";
+        var pkText = schemaAttribute.IsPk ? "PRIMARY KEY" : "";
+        return $"{schemaAttribute.Name.ToSnakeCase()} {ConvertType(Type.GetTypeCode(schemaAttribute.Type))} {pkText}".Trim();
     }
 
     public override string ConvertTable(Table table)
@@ -52,11 +53,21 @@ public class SqliteTableConverter : TableConverter
 
     public override string GetValuesArray(Table table, Record record)
     {
-        return $"({string.Join(", ", table.GetRecordValues(record))})";
+        return $"({string.Join(", ", table.GetRecordValues(record)
+            .Select(x => x.Item2 == null ? "" : FormatValue(x.Item2)))})";
     }
     
     public override string GetMultipleValuesArray(Table table, List<Record> records)
     {
         return $"{string.Join(", ", records.Select(x => GetValuesArray(table, x)))}";
+    }
+
+    public override string FormatValue(object obj)
+    {
+        return obj switch
+        {
+            string i => $"\"{i}\"",
+            _ => obj.ToString() ?? ""
+        };
     }
 }

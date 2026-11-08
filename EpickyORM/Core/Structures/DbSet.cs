@@ -20,11 +20,16 @@ public class DbSet<T>
 
     private void CheckPrimaryKey()
     {
-        var pkAttr = typeof(T).GetProperties().FirstOrDefault(x => x.GetCustomAttribute<Attributes.PrimaryKey>() != null);
+        var pkAttr = typeof(T).GetProperties().Where(x => x.GetCustomAttribute<Attributes.PrimaryKey>() != null);
         if (pkAttr == null)
         {
             throw new Exception(
                 $"Class {typeof(T)} doesn't have a PrimaryKey attribute. Please add one above one of its properties.");
+        }
+        if (pkAttr.Count() > 1)
+        {
+            throw new Exception(
+                $"Class {typeof(T)} has too many primary keys.");
         }
     }
 

@@ -1,11 +1,12 @@
 using EpickyORM.Core.Drivers;
+using EpickyORM.Core.Enum;
 
 namespace EpickyORM.Core.Structures;
 
 public abstract class DbContext
 {
     private readonly ChangeTracker _changeTracker;
-    private bool triedCreatingTables = false;
+    private bool _triedCreatingTables;
 
     // poprvé používám internal, díky tomu můžu Driver nastavit z databáze ale nikdo mimo namespace se k němu nedostane
     internal DatabaseDriver? Driver { get; set; }
@@ -31,12 +32,6 @@ public abstract class DbContext
         if (invalidProperties.Any())
         {
             throw new Exception($"Class {GetType()} can only have properties of DbSet<class> type.");
-        }
-
-        var invalidAccessors = properties.Where(x => x.GetMethod == null || x.SetMethod != null);
-        if (invalidAccessors.Any())
-        {
-            throw new Exception($"Properties of {GetType()} must have only get accessors.");
         }
     }
 
@@ -85,18 +80,18 @@ public abstract class DbContext
                 $"No Database driver found - was the context {GetType()} registered using Database constructor?");
         }
 
-        if (!triedCreatingTables)
+        if (!_triedCreatingTables)
         {
             foreach (var table in _changeTracker.Tables)
             {
                 Driver.TryCreateTable(table);
             }
-            triedCreatingTables = true;
+            _triedCreatingTables = true;
         }
         
         foreach (var table in _changeTracker.Tables)
         {
-            Driver.Insert(table, table.GetRecords());
+            Driver.Insert(table, table.GetRecords().Where(x => x.RecordAction == RecordAction.ADD).ToList());
         }
         _changeTracker.Flush();
     }

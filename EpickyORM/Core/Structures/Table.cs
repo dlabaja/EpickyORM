@@ -13,6 +13,7 @@ public class Table
     private Dictionary<SchemaAttribute, Func<object, object?>> _getters = new();
     private List<Record> _records = [];
     
+    // tohle by teoreticky mohla být generická třída, ale pak bych je nemohl spojovat do kolekcí (každá tabulka má jinej typ)
     public Table(Type type)
     {
         Type = type;
@@ -24,18 +25,23 @@ public class Table
     {
         var properties = Type.GetProperties().Where(x => x.GetCustomAttribute<Ignore>() == null);
         var fields = Type.GetFields().Where(x => x.GetCustomAttribute<Include>() != null);
-
+        var primaryKey = Type.GetProperties().FirstOrDefault(x => x.GetCustomAttribute<Attributes.PrimaryKey>() != null);
+        if (primaryKey == null)
+        {
+            throw new Exception("No primary key found");
+        }
+        
         var schemaAttributes = new List<SchemaAttribute>();
         foreach (var property in properties)
         {
-            var attribute = new SchemaAttribute(property.Name.ToSnakeCase(), property.PropertyType);
+            var attribute = new SchemaAttribute(property.Name.ToSnakeCase(), property.PropertyType, property.Name == primaryKey.Name);
             schemaAttributes.Add(attribute);
             _getters.Add(attribute, obj => property.GetValue(obj));
         }
 
         foreach (var field in fields)
         {
-            var attribute = new SchemaAttribute(field.Name.ToSnakeCase(), field.FieldType);
+            var attribute = new SchemaAttribute(field.Name.ToSnakeCase(), field.FieldType, false);
             schemaAttributes.Add(attribute);
             _getters.Add(attribute, obj => field.GetValue(obj));
         }

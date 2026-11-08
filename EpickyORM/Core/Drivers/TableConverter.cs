@@ -15,4 +15,6 @@ public abstract class TableConverter
     public abstract string GetValuesArray(Table table, Record record);
 
     public abstract string GetMultipleValuesArray(Table table, List<Record> records);
+
+    public abstract string FormatValue(Object obj);
 }
