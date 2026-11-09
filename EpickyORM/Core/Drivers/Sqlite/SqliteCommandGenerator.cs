@@ -22,4 +22,10 @@ public class SqliteCommandGenerator : CommandGenerator
         return
             $"INSERT INTO {table.Name} {_converter.GetSchemaArray(table)} VALUES {_converter.GetMultipleValuesArray(table, records)};";
     }
+
+    public override string GetLastId()
+    {
+        // vrátí poslední vygenerované ID (PK) v connectionu
+        return "SELECT last_insert_rowid();";
+    }
 }

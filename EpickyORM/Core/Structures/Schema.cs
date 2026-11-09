@@ -8,4 +8,10 @@ public class Schema
     {
         SchemaAttributes = schemaAttributes;
     }
+
+    public SchemaAttribute GetPrimaryKeyAttribute()
+    {
+        return SchemaAttributes.FirstOrDefault(x => x.IsPk) ??
+               throw new Exception("Schema needs to have a primary key");
+    }
 }

@@ -9,4 +9,6 @@ public abstract class CommandGenerator
     public abstract string DropTable(Table table);
 
     public abstract string Insert(Table table, List<Record> records);
+
+    public abstract string GetLastId();
 }

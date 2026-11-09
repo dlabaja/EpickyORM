@@ -11,6 +11,7 @@ public class Table
     public Schema Schema { get; }
     public Type Type { get; }
     private Dictionary<SchemaAttribute, Func<object, object?>> _getters = new();
+    private Dictionary<SchemaAttribute, Action<object, object>> _setters = new();
     private List<Record> _records = [];
     
     // tohle by teoreticky mohla být generická třída, ale pak bych je nemohl spojovat do kolekcí (každá tabulka má jinej typ)
@@ -37,6 +38,7 @@ public class Table
             var attribute = new SchemaAttribute(property.Name.ToSnakeCase(), property.PropertyType, property.Name == primaryKey.Name);
             schemaAttributes.Add(attribute);
             _getters.Add(attribute, obj => property.GetValue(obj));
+            _setters.Add(attribute, (obj, val) => property.SetValue(obj, val));
         }
 
         foreach (var field in fields)
@@ -44,6 +46,7 @@ public class Table
             var attribute = new SchemaAttribute(field.Name.ToSnakeCase(), field.FieldType, false);
             schemaAttributes.Add(attribute);
             _getters.Add(attribute, obj => field.GetValue(obj));
+            _setters.Add(attribute, (obj, val) => field.SetValue(obj, val));
         }
 
         return new Schema(schemaAttributes);
@@ -62,6 +65,16 @@ public class Table
     public bool FulfillsSchema(Record record)
     {
         return Type == record.Type;
+    }
+
+    public object? GetValue(SchemaAttribute schemaAttribute, Record record)
+    {
+        return _getters[schemaAttribute].Invoke(record.Instance);
+    }
+
+    public void SetValue(SchemaAttribute schemaAttribute, Record record, object value)
+    {
+        _setters[schemaAttribute].Invoke(record.Instance, value);
     }
 
     public void Add(Record record)

@@ -11,11 +11,14 @@ public abstract class DatabaseDriver
         ConnectionString = connectionString;
     }
 
-    protected abstract void Execute(string sql);
+    protected abstract void Execute(string[] commands);
+
+    protected abstract List<object?> ExecuteScalar(string[] commands);
     
     public abstract void TryCreateTable(Table table);
     
     public abstract void DropTable(Table table);
 
-    public abstract void Insert(Table table, List<Record> records);
+    public abstract void Insert(Table table, List<Record> records, out int newId);
+
 }

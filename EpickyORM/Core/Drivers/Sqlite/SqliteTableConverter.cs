@@ -1,3 +1,4 @@
+using System.Globalization;
 using EpickyORM.Core.Structures;
 using static EpickyORM.Core.Utils.StringUtils;
 
@@ -12,6 +13,7 @@ public class SqliteTableConverter : TableConverter
         {
             // speciální null pro databáze
             case TypeCode.DBNull:
+            case TypeCode.Empty:
                 return "NULL";
             case TypeCode.String:
             case TypeCode.Char:
@@ -30,8 +32,7 @@ public class SqliteTableConverter : TableConverter
             case TypeCode.Double:
                 return "REAL";
             default:
-                // možná by bylo lepší to thrownout?
-                return "BLOB";
+                throw new Exception($"Cannot save {type} to database");
         }
     }
 
@@ -67,6 +68,8 @@ public class SqliteTableConverter : TableConverter
         return obj switch
         {
             string i => $"\"{i}\"",
+            float i => i.ToString(provider: CultureInfo.InvariantCulture),
+            double i => i.ToString(provider: CultureInfo.InvariantCulture),
             _ => obj.ToString() ?? ""
         };
     }

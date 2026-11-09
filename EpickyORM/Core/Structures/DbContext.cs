@@ -91,7 +91,14 @@ public abstract class DbContext
         
         foreach (var table in _changeTracker.Tables)
         {
-            Driver.Insert(table, table.GetRecords().Where(x => x.RecordAction == RecordAction.ADD).ToList());
+            var records = table.GetRecords().Where(x => x.RecordAction == RecordAction.ADD).ToList();
+            Driver.Insert(table, records, out var lastNewId);
+            var startId = lastNewId - (records.Count - 1);
+            foreach (var record in records)
+            {
+                table.SetValue(table.Schema.GetPrimaryKeyAttribute(), record, startId);
+                startId++;
+            }
         }
         _changeTracker.Flush();
     }

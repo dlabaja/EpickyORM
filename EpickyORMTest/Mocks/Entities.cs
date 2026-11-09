@@ -4,6 +4,7 @@ namespace EpickyORMTest.Mocks;
 
 class Predmet
 {
+    [PrimaryKey] public int Id { get; set; } 
     public string Code { get; set; }
     public Teacher Teacher { get; set; }
     [EpickyORM.Core.Attributes.Ignore] public string NotIncludedProp { get; set; }

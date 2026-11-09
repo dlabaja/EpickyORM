@@ -63,7 +63,7 @@ public class DbSet<T>
         var pk = GetPrimaryKey(instance)?.GetValue();
         if (pk != null)
         {
-            //var record = new Record(instance, instance.GetType());
+            _changeTracker.Add(new Record(instance, instance.GetType(), RecordAction.REMOVE));
         }
     }
 }

@@ -14,27 +14,40 @@ public class SqliteDatabaseDriver : DatabaseDriver
     
     // https://www.sqlitetutorial.net/sqlite-csharp/create-tables/
     // connection by se měl automaticky poolovat, takže můžu udělat jeden na každej příkaz
-    protected override void Execute(string sql)
+    protected override void Execute(string[] commands)
     {
         using var connection = new SqliteConnection(ConnectionString);
         connection.Open();
 
-        using var command = new SqliteCommand(sql, connection);
-        command.ExecuteNonQuery();
+        foreach (var command in commands)
+        {
+            using var cmd = new SqliteCommand(command, connection);
+            cmd.ExecuteNonQuery();
+        }
+    }
+    
+    protected override List<object?> ExecuteScalar(string[] commands)
+    {
+        using var connection = new SqliteConnection(ConnectionString);
+        connection.Open();
+
+        return commands.Select(command => new SqliteCommand(command, connection).ExecuteScalar()).ToList();
     }
 
     public override void TryCreateTable(Table table)
     {
-        Execute(_generator.TryCreateTable(table));
+        Execute([_generator.TryCreateTable(table)]);
     }
 
     public override void DropTable(Table table)
     {
-        Execute(_generator.DropTable(table));
+        Execute([_generator.DropTable(table)]);
     }
 
-    public override void Insert(Table table, List<Record> records)
+    public override void Insert(Table table, List<Record> records, out int lastNewId)
     {
-        Execute(_generator.Insert(table, records));
+        lastNewId = 0;
+        var objects = ExecuteScalar([_generator.Insert(table, records), _generator.GetLastId()]);
+        int.TryParse(objects.Last()?.ToString(), out lastNewId);
     }
 }
