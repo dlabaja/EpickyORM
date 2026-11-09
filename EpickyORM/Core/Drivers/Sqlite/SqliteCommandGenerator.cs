@@ -1,5 +1,9 @@
+using System.Linq.Expressions;
 using EpickyORM.Core.Drivers.SQLite;
 using EpickyORM.Core.Structures;
+using EpickyORM.Core.Structures.Linq.QueryModel;
+using EpickyORM.Core.Structures.Linq.QueryModel.Clause;
+using EpickyORM.Core.Structures.Linq.QueryModel.Primitive;
 
 namespace EpickyORM.Core.Drivers.Sqlite;
 
@@ -25,7 +29,44 @@ public class SqliteCommandGenerator : CommandGenerator
 
     public override string GetLastId()
     {
-        // vrátí poslední vygenerované ID (PK) v connectionu
+        // vrátí poslední vygenerované ID (PK) v connectionu!
         return "SELECT last_insert_rowid();";
+    }
+
+    public override string Select(QueryRoot root)
+    {
+        return $"SELECT * FROM ";
+    }
+
+    public override string GetBinaryOperator(ExpressionType expressionType)
+    {
+        // tyhle nový switche se mi líběj
+        return expressionType switch
+        {
+            ExpressionType.Equal => "=",
+            ExpressionType.NotEqual => "<>", // nebo i !=
+            ExpressionType.GreaterThan => ">",
+            ExpressionType.GreaterThanOrEqual => ">=",
+            ExpressionType.LessThan => "<",
+            ExpressionType.LessThanOrEqual => "<=",
+            ExpressionType.AndAlso => "AND",
+            ExpressionType.OrElse => "OR",
+            _ => throw new Exception($"Unsupported operator {expressionType}")
+        };
+    }
+
+    public override string GetBinaryCondition(QueryBinaryCondition binaryCondition)
+    {
+        return $"({binaryCondition.Left.Parse(this)} {GetBinaryOperator(binaryCondition.BinaryOperator)} {binaryCondition.Right.Parse(this)})";
+    }
+
+    public override string GetParameter(QueryParameter parameter)
+    {
+        return $"@p{parameter.Id}";
+    }
+
+    public override string GetWhereClause(QueryWhereClause whereClause)
+    {
+        return $"WHERE {whereClause.BinaryCondition.Parse(this)}";
     }
 }
