@@ -1,6 +1,5 @@
 using System.Reflection;
 using EpickyORM.Core.Attributes;
-using EpickyORM.Core.Enum;
 using EpickyORM.Core.Utils;
 
 namespace EpickyORM.Core.Structures;

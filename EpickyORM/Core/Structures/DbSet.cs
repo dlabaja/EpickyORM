@@ -1,5 +1,5 @@
 using System.Reflection;
-using EpickyORM.Core.Enum;
+using EpickyORM.Core.Enums;
 
 namespace EpickyORM.Core.Structures;
 
@@ -26,6 +26,7 @@ public class DbSet<T>
             throw new Exception(
                 $"Class {typeof(T)} doesn't have a PrimaryKey attribute. Please add one above one of its properties.");
         }
+
         if (pkAttr.Count() > 1)
         {
             throw new Exception(
@@ -46,7 +47,7 @@ public class DbSet<T>
         {
             return;
         }
-        
+
         var pk = GetPrimaryKey(instance)?.GetValue();
 
         var record = new Record(instance, instance.GetType(), pk == null ? RecordAction.ADD : RecordAction.UPDATE);
@@ -59,7 +60,7 @@ public class DbSet<T>
         {
             return;
         }
-        
+
         var pk = GetPrimaryKey(instance)?.GetValue();
         if (pk != null)
         {

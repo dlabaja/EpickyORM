@@ -1,4 +1,4 @@
-using EpickyORM.Core.Enum;
+using EpickyORM.Core.Enums;
 
 namespace EpickyORM.Core.Structures;
 

@@ -1,4 +1,4 @@
-namespace EpickyORM.Core.Enum;
+namespace EpickyORM.Core.Enums;
 
 public enum RecordAction
 {

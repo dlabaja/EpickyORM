@@ -1,5 +1,5 @@
 using EpickyORM.Core.Drivers.SQLite;
-using EpickyORM.Core.Enum;
+using EpickyORM.Core.Enums;
 using EpickyORM.Core.Structures;
 using EpickyORMTest.Mocks;
 
