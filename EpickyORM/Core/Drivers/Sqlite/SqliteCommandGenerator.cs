@@ -35,7 +35,8 @@ public class SqliteCommandGenerator : CommandGenerator
 
     public override string Select(QueryRoot root)
     {
-        return $"SELECT * FROM ";
+        var whereClause = root.WhereClause.Parse(this);
+        return $"SELECT * FROM  {whereClause}";
     }
 
     public override string GetBinaryOperator(ExpressionType expressionType)
@@ -68,5 +69,10 @@ public class SqliteCommandGenerator : CommandGenerator
     public override string GetWhereClause(QueryWhereClause whereClause)
     {
         return $"WHERE {whereClause.BinaryCondition.Parse(this)}";
+    }
+
+    public override string GetAttributeName(QueryAttributeName attributeName)
+    {
+        return $"{attributeName.Name}";
     }
 }

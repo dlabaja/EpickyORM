@@ -1,13 +1,14 @@
+using EpickyORM.Core.Drivers;
 using EpickyORM.Core.Structures.Linq.QueryModel.Clause;
 
 namespace EpickyORM.Core.Structures.Linq.QueryModel;
 
-public class QueryRoot
+public class QueryRoot : QueryExpression
 {
-    public QueryWhereClause WhereClause { get; }
-    
-    public QueryRoot(QueryWhereClause whereClause)
+    public QueryWhereClause? WhereClause { get; set; }
+
+    public override string Parse(CommandGenerator generator)
     {
-        WhereClause = whereClause;
+        return generator.Select(this);
     }
 }

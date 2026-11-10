@@ -25,4 +25,6 @@ public abstract class CommandGenerator
     public abstract string GetParameter(QueryParameter parameter);
     
     public abstract string GetWhereClause(QueryWhereClause whereClause);
+    
+    public abstract string GetAttributeName(QueryAttributeName attributeName);
 }

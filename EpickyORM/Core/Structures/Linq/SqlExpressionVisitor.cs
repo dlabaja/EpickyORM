@@ -1,31 +1,37 @@
 using System.Linq.Expressions;
 using EpickyORM.Core.Drivers;
-using EpickyORM.Core.Enums;
+using EpickyORM.Core.Structures.Linq.QueryModel;
+using EpickyORM.Core.Structures.Linq.QueryModel.Clause;
+using EpickyORM.Core.Structures.Linq.QueryModel.Primitive;
 
 namespace EpickyORM.Core.Structures.Linq;
 
-// tree walker, tady vařím
+// projdu LINQ strom a namapuju si ho na svůj Query strom
 // hodně mi pomohl tenhle blog: https://jordansrowles.medium.com/building-a-custom-linq-provider-in-net-a987dc983381
 public class SqlExpressionVisitor : ExpressionVisitor
 {
-    private List<Clause> _clauses = new();
     private CommandGenerator _generator;
-    private Clause? _currentClause = null;
+    private int _currentParamId;
+    private QueryRoot _root = new QueryRoot();
 
-    private SqlExpressionVisitor(CommandGenerator generator)
+    public SqlExpressionVisitor(CommandGenerator generator)
     {
         _generator = generator;
+    }
+    
+    public QueryRoot Build(Expression expression)
+    {
+        Visit(expression);
+        return _root;
     }
 
     protected override Expression VisitMethodCall(MethodCallExpression node)
     {
+        Visit(node.Arguments[0]); // rekurzivně jdu hledat další metody
         switch (node.Method.Name)
         {
             case "Where":
-                VisitWhere(node);
-                break;
-            case "OrderBy":
-                VisitOrderBy(node);
+                _root.WhereClause = new QueryWhereClause((QueryBinaryCondition)ParseExpression(node.Arguments[1])); // Where(objects, x => ...)
                 break;
             default:
                 throw new Exception($"I don't know how to convert {node.Method.Name} to SQL ;(");
@@ -33,54 +39,20 @@ public class SqlExpressionVisitor : ExpressionVisitor
 
         return node;
     }
-
-    protected override Expression VisitBinary(BinaryExpression node)
-    {
-        _currentClause?.AddBodyPart();
-        Visit(node.Left);
-        _generator.GetBinaryOperator(node.NodeType);
-        Visit(node.Right);
-        return node;
-    }
-
-    private void VisitWhere(MethodCallExpression node)
-    {
-        _currentClause = GetClause(ClauseOperator.WHERE);
-        Visit(node.Arguments[1]); // podmínka
-    }
-
-    private void VisitOrderBy(MethodCallExpression node)
-    {
-        Visit(node.Arguments[1]); // taky podmínka
-    }
-
-    private Clause GetClause(ClauseOperator op)
-    {
-        var clause = _clauses.Find(x => x.Operator == op);
-        if (clause == null)
-        {
-            var c = new Clause(op);
-            _clauses.Add(c);
-            return c;
-        }
-        return clause;
-    }
-
-    public string Build()
-    {
-        var result = new List<string>();
-        foreach (var op in Enum.GetValues<ClauseOperator>())
-        {
-            var clause = _clauses.Find(x => x.Operator == op);
-            if (clause == null)
-            {
-                continue;
-            }
-
-            result.Add(clause.Build(_generator));
-        }
-
-        return string.Join(" ", result);
-    }
     
+    // x => x.Id == 1
+    // Id == 1
+    private QueryExpression ParseExpression(Expression expr)
+    {
+        return expr switch
+        {
+            BinaryExpression bin => new QueryBinaryCondition(ParseExpression(bin.Left), ParseExpression(bin.Right),
+                bin.NodeType),
+            MemberExpression mem => new QueryAttributeName(mem.Member.Name), // e.Arg -> "Arg"
+            LambdaExpression lambda => ParseExpression(lambda.Body), // (e => e.Arg) -> e.Arg
+            ConstantExpression param => new QueryParameter(param.Value,
+                _currentParamId++), // díky zápočtovýmu testu jsem se naučil správně používat increment
+            _ => throw new Exception("Unsupported expression")
+        };
+    }
 }
