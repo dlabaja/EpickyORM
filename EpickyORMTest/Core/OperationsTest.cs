@@ -13,8 +13,8 @@ class MyContext : DbContext
 public class OperationsTest
 {
     private readonly string _path = "test.sqlite";
-    private static readonly DatabaseDriver _driver = new SqliteDatabaseDriver("Data Source=test.sqlite");
-    private static readonly Database<MyContext> _db = new(_driver);
+    private static readonly DatabaseDriver driver = new SqliteDatabaseDriver("Data Source=test.sqlite");
+    private static readonly Database<MyContext> db = new(driver);
     
     [SetUp]
     public void Setup()
@@ -22,17 +22,26 @@ public class OperationsTest
         File.WriteAllBytes(_path, []);
     }
 
+    private static long GetCount(string tableName)
+    {
+        var res = driver.ExecuteScalar([$"SELECT COUNT(*) FROM {tableName}"]);
+        return (long)res[0]!;
+    }
+
     [Test]
     public void TestCreateTable()
     {
-        // tabulka by měla být vytvořená automaticky na začátku (nesmí to spadnout)
-        var res = _driver.ExecuteScalar(["SELECT COUNT(*) FROM Teacher"]);
-        Assert.That((long)res[0]! == 0);
+        // tabulka by měla být vytvořená automaticky při incializaci db (nahoře)
+        Assert.That(GetCount("Teacher") == 0);
     }
 
     [Test]
     public void TestAddToTable()
     {
-        _db.Context.Teachers.Add(new Teacher() {Name = "Jan", Surname = "Novák", Titul = "Doc"});
+        var teacher = new Teacher { Name = "Jan", Surname = "Novák", Titul = "Doc" };
+        db.Context.Teachers.Add(teacher);
+        db.Context.SaveChanges();
+        Assert.That(teacher.Id == 1);
+        Assert.That(GetCount("Teacher") == 1);
     }
 }
