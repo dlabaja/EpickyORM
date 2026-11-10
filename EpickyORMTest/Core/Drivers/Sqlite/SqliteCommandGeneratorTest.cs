@@ -1,6 +1,6 @@
 using EpickyORM.Core.Drivers.Sqlite;
 using EpickyORM.Core.Enums;
-using EpickyORM.Core.Structures;
+using EpickyORM.Core.Structures.Backend;
 using EpickyORMTest.Mocks;
 
 namespace EpickyORMTest.Core.Drivers.Sqlite;

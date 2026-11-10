@@ -15,9 +15,10 @@ public abstract class DatabaseDriver
         ConnectionString = connectionString;
     }
 
-    protected abstract void Execute(string[] commands);
+    // je to public hlavně kvůli testům, ale i tak se to může někdy hodit
+    public abstract void Execute(string[] commands);
 
-    protected abstract List<object?> ExecuteScalar(string[] commands);
+    public abstract List<object?> ExecuteScalar(string[] commands);
     
     public abstract void TryCreateTable(Table table);
     

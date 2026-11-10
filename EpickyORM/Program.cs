@@ -1,6 +1,5 @@
 ﻿using EpickyORM.Core.Attributes;
 using EpickyORM.Core.Drivers.SQLite;
-using EpickyORM.Core.Structures;
 using EpickyORM.Core.Structures.Frontend;
 
 class MyContext : DbContext
@@ -11,6 +10,7 @@ class MyContext : DbContext
 
 class Predmet
 {
+    [PrimaryKey] public int Id { get; set; } 
     public string Code { get; set; }
     public Teacher Teacher { get; set; }
     [Ignore] public string NotIncludedProp { get; set; }
@@ -21,9 +21,10 @@ class Predmet
 
 class Teacher
 {
-    public string name;
-    public string surname;
-    public string titul;
+    [PrimaryKey] public int Id { get; set; } 
+    public string Name { get; set; }
+    public string Surname { get; set; }
+    public string Titul { get; set; }
 }
 
 public class Program

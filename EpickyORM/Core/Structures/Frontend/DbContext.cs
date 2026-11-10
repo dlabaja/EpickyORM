@@ -1,3 +1,4 @@
+using System.Reflection;
 using EpickyORM.Core.Drivers;
 using EpickyORM.Core.Enums;
 using EpickyORM.Core.Structures.Backend;
@@ -10,11 +11,16 @@ public abstract class DbContext
     private bool _triedCreatingTables;
 
     // poprvé používám internal, díky tomu můžu Driver nastavit z databáze ale nikdo mimo namespace se k němu nedostane
-    internal DatabaseDriver? Driver { get; set; }
+    internal DatabaseDriver Driver { get; private set; }
 
     protected DbContext()
     {
         _changeTracker = new ChangeTracker();
+    }
+
+    internal void Init(DatabaseDriver driver)
+    {
+        Driver = driver;
         CheckDbSets();
         CreateDbSets();
         TryCreatingTables();
@@ -24,7 +30,7 @@ public abstract class DbContext
     {
         var properties = GetType().GetProperties();
         var invalidProperties = properties
-            .Where(x => x.PropertyType != typeof(DbSet<>));
+            .Where(x => !x.PropertyType.IsGenericType || x.PropertyType.GetGenericTypeDefinition() != typeof(DbSet<>)); // bez genericTypeDef bych to porovnával s DbSet<T> != DbSet<> -> vždycky true
         if (invalidProperties.Any())
         {
             throw new Exception($"Class {GetType()} can only have properties of DbSet<class> type.");
@@ -35,7 +41,8 @@ public abstract class DbContext
     {
         var properties = GetType().GetProperties();
         var invalidProperties = properties
-            .Where(x => !x.PropertyType.IsGenericType || x.PropertyType != typeof(DbSet<>));
+            .Where(x => 
+                !x.PropertyType.IsGenericType || x.PropertyType.GetGenericTypeDefinition() != typeof(DbSet<>)); // bez genericTypeDef by se to muselo rovat DbSet<T>
         if (invalidProperties.Any())
         {
             throw new Exception($"Class {GetType()} can only have properties of DbSet<class> type.");
@@ -52,7 +59,16 @@ public abstract class DbContext
 
             // tvorba instance, uložím ji do Contextu
             var instance = Activator.CreateInstance(dbSet, table, Driver, _changeTracker);
-            property.SetValue(this, instance);
+            if (property.CanWrite) // má setter
+            {
+                property.SetValue(this, instance);
+            }
+            else
+            {
+                // https://stackoverflow.com/questions/68354413/set-property-of-instance-without-setter
+                var setter = GetType().GetField($"<{property.Name}>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
+                setter?.SetValue(this, instance);
+            }
         }
     }
 
@@ -65,7 +81,7 @@ public abstract class DbContext
 
         foreach (var table in _changeTracker.Tables)
         {
-            Driver?.TryCreateTable(table);
+            Driver.TryCreateTable(table);
         }
 
         _triedCreatingTables = true;
@@ -73,6 +89,10 @@ public abstract class DbContext
 
     private void ProcessRecordsToAdd(DatabaseDriver driver, Table table, List<Record> records)
     {
+        if (records.Count == 0)
+        {
+            return;
+        }
         driver.Insert(table, records, out var lastNewId);
         var startId = lastNewId - (records.Count - 1);
         foreach (var record in records)
@@ -84,22 +104,24 @@ public abstract class DbContext
 
     private void ProcessRecordsToUpdate(DatabaseDriver driver, Table table, List<Record> records)
     {
+        if (records.Count == 0)
+        {
+            return;
+        }
         driver.Update(table, records);
     }
 
     private void ProcessRecordsToRemove(DatabaseDriver driver, Table table, List<Record> records)
     {
+        if (records.Count == 0)
+        {
+            return;
+        }
         driver.Delete(table, records);
     }
 
     public void SaveChanges()
     {
-        if (Driver == null)
-        {
-            throw new Exception(
-                $"No Database driver found - was the context {GetType()} registered using Database constructor?");
-        }
-
         foreach (var table in _changeTracker.Tables)
         {
             ProcessRecordsToAdd(Driver, table,

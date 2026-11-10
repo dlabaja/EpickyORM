@@ -1,5 +1,6 @@
 using EpickyORM.Core.Drivers;
 using EpickyORM.Core.Structures;
+using EpickyORM.Core.Structures.Backend;
 using EpickyORM.Core.Structures.Linq.QueryModel;
 
 namespace EpickyORMTest.Mocks;
@@ -11,12 +12,12 @@ public class TestDriver : DatabaseDriver
     }
 
     public override CommandGenerator CommandGenerator { get; }
-    protected override void Execute(string[] commands)
+    public override void Execute(string[] commands)
     {
         
     }
 
-    protected override List<object?> ExecuteScalar(string[] commands)
+    public override List<object?> ExecuteScalar(string[] commands)
     {
         return [];
     }

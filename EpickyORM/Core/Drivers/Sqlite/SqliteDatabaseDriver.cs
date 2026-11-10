@@ -1,6 +1,5 @@
 using EpickyORM.Core.Drivers.Sqlite;
 using EpickyORM.Core.Enums;
-using EpickyORM.Core.Structures;
 using EpickyORM.Core.Structures.Backend;
 using EpickyORM.Core.Structures.Linq.QueryModel;
 using Microsoft.Data.Sqlite;
@@ -20,30 +19,47 @@ public class SqliteDatabaseDriver : DatabaseDriver
     // https://www.sqlitetutorial.net/sqlite-csharp/create-tables/
     // connection by se měl automaticky poolovat, takže můžu udělat jeden na každej příkaz
     // transakce kromě možnosti rollbacku umožňuje nešahat kvůli každému příkazu na disk
-    protected override void Execute(string[] commands)
+    public override void Execute(string[] commands)
     {
         using var connection = new SqliteConnection(ConnectionString);
         connection.Open();
 
         using var transaction = connection.BeginTransaction();
-        foreach (var command in commands)
+        try
         {
-            using var cmd = new SqliteCommand(command, connection);
-            cmd.ExecuteNonQuery();
-        }
+            foreach (var command in commands)
+            {
+                using var cmd = new SqliteCommand(command, connection, transaction);
+                cmd.ExecuteNonQuery();
+            }
 
-        transaction.Commit();
+            transaction.Commit();
+        }
+        catch (Exception e)
+        {
+            transaction.Rollback();
+            throw new Exception("Error in my ORM Execute, it's still Epicky though: " + e.Message);
+        }
     }
 
-    protected override List<object?> ExecuteScalar(string[] commands)
+    public override List<object?> ExecuteScalar(string[] commands)
     {
         using var connection = new SqliteConnection(ConnectionString);
         connection.Open();
 
         using var transaction = connection.BeginTransaction();
-        var result = commands.Select(command => new SqliteCommand(command, connection).ExecuteScalar()).ToList();
-        transaction.Commit();
-        return result;
+        try
+        {
+            var result = commands.Select(command => new SqliteCommand(command, connection, transaction).ExecuteScalar())
+                .ToList();
+            transaction.Commit();
+            return result;
+        }
+        catch (Exception e)
+        {
+            transaction.Rollback();
+            throw new Exception("Error in my ORM Execute, it's still Epicky though: " + e.Message);
+        }
     }
 
     public override void TryCreateTable(Table table)
