@@ -1,9 +1,8 @@
 using EpickyORM.Core.Drivers;
 using EpickyORM.Core.Enums;
-using EpickyORM.Core.Structures.Linq.QueryModel.Clause;
-using EpickyORM.Core.Structures.Linq.QueryModel.Primitive;
+using EpickyORM.Core.Structures.Backend;
 
-namespace EpickyORM.Core.Structures;
+namespace EpickyORM.Core.Structures.Frontend;
 
 public abstract class DbContext
 {

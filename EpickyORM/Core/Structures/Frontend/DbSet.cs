@@ -1,9 +1,10 @@
 using System.Reflection;
 using EpickyORM.Core.Drivers;
 using EpickyORM.Core.Enums;
+using EpickyORM.Core.Structures.Backend;
 using EpickyORM.Core.Structures.Linq;
 
-namespace EpickyORM.Core.Structures;
+namespace EpickyORM.Core.Structures.Frontend;
 
 // množina/kolekce záznamů
 public class DbSet<T> : SqlQueryable<T>

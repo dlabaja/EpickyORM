@@ -1,6 +1,6 @@
 ﻿using EpickyORM.Core.Drivers;
 
-namespace EpickyORM.Core.Structures;
+namespace EpickyORM.Core.Structures.Frontend;
 
 public class Database<T> where T : DbContext
 {

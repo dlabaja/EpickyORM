@@ -1,4 +1,4 @@
-namespace EpickyORM.Core.Structures;
+namespace EpickyORM.Core.Structures.Backend;
 
 public class SchemaAttribute
 {

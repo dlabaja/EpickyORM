@@ -1,6 +1,6 @@
 using EpickyORM.Core.Enums;
 
-namespace EpickyORM.Core.Structures;
+namespace EpickyORM.Core.Structures.Backend;
 
 public class Record
 {

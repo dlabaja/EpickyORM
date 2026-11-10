@@ -2,7 +2,7 @@ using System.Reflection;
 using EpickyORM.Core.Attributes;
 using EpickyORM.Core.Utils;
 
-namespace EpickyORM.Core.Structures;
+namespace EpickyORM.Core.Structures.Backend;
 
 public class Table
 {

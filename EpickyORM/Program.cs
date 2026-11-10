@@ -1,6 +1,7 @@
 ﻿using EpickyORM.Core.Attributes;
 using EpickyORM.Core.Drivers.SQLite;
 using EpickyORM.Core.Structures;
+using EpickyORM.Core.Structures.Frontend;
 
 class MyContext : DbContext
 {
