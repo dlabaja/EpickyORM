@@ -11,14 +11,12 @@ namespace EpickyORM.Core.Structures.Linq;
 // hodně mi pomohl tenhle blog: https://jordansrowles.medium.com/building-a-custom-linq-provider-in-net-a987dc983381
 public class SqlExpressionVisitor : ExpressionVisitor
 {
-    private CommandGenerator _generator;
     private int _currentParamId;
     private readonly QueryRoot _root;
 
-    public SqlExpressionVisitor(Table table, CommandGenerator generator)
+    public SqlExpressionVisitor(Table table)
     {
         _root = new QueryRoot(table);
-        _generator = generator;
     }
 
     public QueryRoot Build(Expression expression)

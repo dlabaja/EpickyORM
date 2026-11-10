@@ -86,6 +86,11 @@ public class Table
         return _records;
     }
 
+    public object GetRecordPk(Record record)
+    {
+        return GetValue(Schema.GetPrimaryKeyAttribute(), record) ?? throw new Exception("This record has no primary key");
+    }
+
     public void Flush()
     {
         foreach (var record in _records)

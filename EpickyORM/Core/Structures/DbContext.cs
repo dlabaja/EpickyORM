@@ -1,5 +1,7 @@
 using EpickyORM.Core.Drivers;
 using EpickyORM.Core.Enums;
+using EpickyORM.Core.Structures.Linq.QueryModel.Clause;
+using EpickyORM.Core.Structures.Linq.QueryModel.Primitive;
 
 namespace EpickyORM.Core.Structures;
 
@@ -13,15 +15,10 @@ public abstract class DbContext
 
     protected DbContext()
     {
+        _changeTracker = new ChangeTracker();
         CheckDbSets();
         CreateDbSets();
-
-        _changeTracker =
-            new ChangeTracker(GetType().GetProperties()
-                .Select(x => x.PropertyType.GetGenericArguments()[0])
-                .ToList());
-        
-        RegisterTracker();
+        TryCreatingTables();
     }
 
     private void CheckDbSets()
@@ -49,27 +46,51 @@ public abstract class DbContext
         {
             var type = property.PropertyType.GetGenericArguments()[0];
             var dbSet = typeof(DbSet<>).MakeGenericType(type);
+
+            var tableType = property.PropertyType.GetGenericArguments()[0];
+            var table = new Table(tableType);
+            _changeTracker.RegisterTable(table);
+
             // tvorba instance, uložím ji do Contextu
-            var instance = Activator.CreateInstance(dbSet);
+            var instance = Activator.CreateInstance(dbSet, table, Driver, _changeTracker);
             property.SetValue(this, instance);
         }
     }
 
-    private void RegisterTracker()
+    private void TryCreatingTables()
     {
-        // this vrací aktuální instanci -> potomka téhle třídy
-        var properties = GetType().GetProperties();
-        foreach (var property in properties)
+        if (_triedCreatingTables)
         {
-            var dbSetInstance = property.GetValue(this);
-            var field = property.PropertyType.GetFields().FirstOrDefault(x => x.Name == "_changeTracker");
-            if (field == null)
-            {
-                continue;
-            }
-
-            field.SetValue(dbSetInstance, _changeTracker);
+            return;
         }
+
+        foreach (var table in _changeTracker.Tables)
+        {
+            Driver?.TryCreateTable(table);
+        }
+
+        _triedCreatingTables = true;
+    }
+
+    private void ProcessRecordsToAdd(DatabaseDriver driver, Table table, List<Record> records)
+    {
+        driver.Insert(table, records, out var lastNewId);
+        var startId = lastNewId - (records.Count - 1);
+        foreach (var record in records)
+        {
+            table.SetValue(table.Schema.GetPrimaryKeyAttribute(), record, startId);
+            startId++;
+        }
+    }
+
+    private void ProcessRecordsToUpdate(DatabaseDriver driver, Table table, List<Record> records)
+    {
+        driver.Update(table, records);
+    }
+
+    private void ProcessRecordsToRemove(DatabaseDriver driver, Table table, List<Record> records)
+    {
+        driver.Delete(table, records);
     }
 
     public void SaveChanges()
@@ -80,26 +101,16 @@ public abstract class DbContext
                 $"No Database driver found - was the context {GetType()} registered using Database constructor?");
         }
 
-        if (!_triedCreatingTables)
-        {
-            foreach (var table in _changeTracker.Tables)
-            {
-                Driver.TryCreateTable(table);
-            }
-            _triedCreatingTables = true;
-        }
-        
         foreach (var table in _changeTracker.Tables)
         {
-            var records = table.GetRecords().Where(x => x.RecordAction == RecordAction.ADD).ToList();
-            Driver.Insert(table, records, out var lastNewId);
-            var startId = lastNewId - (records.Count - 1);
-            foreach (var record in records)
-            {
-                table.SetValue(table.Schema.GetPrimaryKeyAttribute(), record, startId);
-                startId++;
-            }
+            ProcessRecordsToAdd(Driver, table,
+                [.. table.GetRecords().Where(x => x.RecordAction == RecordAction.ADD)]);
+            ProcessRecordsToUpdate(Driver, table,
+                [.. table.GetRecords().Where(x => x.RecordAction == RecordAction.UPDATE)]);
+            ProcessRecordsToRemove(Driver, table,
+                [.. table.GetRecords().Where(x => x.RecordAction == RecordAction.REMOVE)]);
         }
+
         _changeTracker.Flush();
     }
 }

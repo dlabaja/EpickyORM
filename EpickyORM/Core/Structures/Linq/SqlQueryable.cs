@@ -7,21 +7,36 @@ namespace EpickyORM.Core.Structures.Linq;
 // třída kterou vrací každý LINQ příkaz
 public class SqlQueryable<T> : IQueryable<T>
 {
-    public SqlQueryable(IEnumerable<T> source)
+    // proč tohle nemá modifikátor přístupu?
+    // public -> při manipulaci s ORM by uživatel viděl Expression, Provider a ElementType
+    // private/protected -> nemohl bych dědit z IQueryable
+    // řešení? tahle věc které se říká Explicitní rozhraní
+    Expression IQueryable.Expression => _expression;
+    IQueryProvider IQueryable.Provider => _provider;
+    Type IQueryable.ElementType => typeof(T);
+    
+    private readonly IQueryProvider _provider;
+    private readonly Expression _expression;
+
+    public SqlQueryable(IQueryProvider provider, Expression expression)
     {
-        
+        _provider = provider ?? throw new ArgumentNullException(nameof(provider));
+        _expression = expression;
+    }
+
+    public SqlQueryable(IQueryProvider provider)
+    {
+        _provider = provider;
+        _expression = Expression.Constant(this);
     }
 
     IEnumerator<T> IEnumerable<T>.GetEnumerator()
     {
-        throw new NotImplementedException();
+        return _provider.Execute<IEnumerable<T>>(_expression).GetEnumerator();
     }
 
-    public Type ElementType { get; }
-    public Expression Expression { get; }
-    public IQueryProvider Provider { get; }
     public IEnumerator GetEnumerator()
     {
-        throw new NotImplementedException();
+        return _provider.Execute<IEnumerable<T>>(_expression).GetEnumerator();
     }
 }

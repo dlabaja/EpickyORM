@@ -6,17 +6,9 @@ public class ChangeTracker
 
     public List<Table> Tables => _tables.Values.ToList();
 
-    public ChangeTracker(List<Type> types)
+    public void RegisterTable(Table table)
     {
-        GenerateTables(types);
-    }
-
-    private void GenerateTables(List<Type> types)
-    {
-        foreach (var type in types)
-        {
-            _tables.Add(type, new Table(type));
-        }
+        _tables.Add(table.Type, table);
     }
     
     public void Add(Record record)

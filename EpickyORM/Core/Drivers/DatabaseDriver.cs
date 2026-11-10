@@ -1,9 +1,12 @@
 using EpickyORM.Core.Structures;
+using EpickyORM.Core.Structures.Linq.QueryModel;
 
 namespace EpickyORM.Core.Drivers;
 
 public abstract class DatabaseDriver
 {
+    public abstract CommandGenerator CommandGenerator { get; }
+    
     protected readonly string ConnectionString;
 
     protected DatabaseDriver(string connectionString)
@@ -21,4 +24,9 @@ public abstract class DatabaseDriver
 
     public abstract void Insert(Table table, List<Record> records, out int newId);
 
+    public abstract List<Record> Select(Table table, QueryRoot root);
+
+    public abstract void Update(Table table, List<Record> records);
+
+    public abstract void Delete(Table table, List<Record> records);
 }

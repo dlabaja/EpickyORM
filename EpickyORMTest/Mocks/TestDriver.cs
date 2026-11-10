@@ -1,5 +1,6 @@
 using EpickyORM.Core.Drivers;
 using EpickyORM.Core.Structures;
+using EpickyORM.Core.Structures.Linq.QueryModel;
 
 namespace EpickyORMTest.Mocks;
 
@@ -9,6 +10,7 @@ public class TestDriver : DatabaseDriver
     {
     }
 
+    public override CommandGenerator CommandGenerator { get; }
     protected override void Execute(string[] commands)
     {
         
@@ -30,5 +32,20 @@ public class TestDriver : DatabaseDriver
     public override void Insert(Table table, List<Record> records, out int newId)
     {
         newId = 0;
+    }
+
+    public override List<Record> Select(Table table, QueryRoot root)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void Update(Table table, List<Record> records)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void Delete(Table table, List<Record> records)
+    {
+        throw new NotImplementedException();
     }
 }

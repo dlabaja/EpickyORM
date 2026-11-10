@@ -49,21 +49,23 @@ public class SqliteCommandGenerator : CommandGenerator
         return $"{string.Join(" ", builder)};";
     }
 
-    public override string Update(Table table, Record record, QueryWhereClause whereClause)
+    public override string Update(Table table, Record record, object pk)
     {
         var builder = new StringBuilder();
         builder.Append($"UPDATE {table.Name}");
         builder.Append(_converter.GetSetArray(table, record));
-        builder.Append(GetWhereClause(whereClause));
+        builder.Append("WHERE");
+        builder.Append($"{table.Schema.GetPrimaryKeyAttribute().Name} = {_converter.FormatValue(pk)}");
 
         return $"{string.Join(" ", builder)};";
     }
 
-    public override string Delete(Table table, QueryWhereClause whereClause)
+    public override string Delete(Table table, object pk)
     {
         var builder = new StringBuilder();
         builder.Append($"DELETE FROM {table.Name}");
-        builder.Append(GetWhereClause(whereClause));
+        builder.Append("WHERE");
+        builder.Append($"{table.Schema.GetPrimaryKeyAttribute().Name} = {_converter.FormatValue(pk)}");
 
         return $"{string.Join(" ", builder)};";
     }

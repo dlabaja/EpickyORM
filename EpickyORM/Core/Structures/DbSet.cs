@@ -1,16 +1,22 @@
 using System.Reflection;
+using EpickyORM.Core.Drivers;
 using EpickyORM.Core.Enums;
+using EpickyORM.Core.Structures.Linq;
 
 namespace EpickyORM.Core.Structures;
 
 // množina/kolekce záznamů
-public class DbSet<T>
+public class DbSet<T> : SqlQueryable<T>
 {
-    // inicializuje se přes reflexi v DbContext
-    private ChangeTracker _changeTracker;
+    private Table _table;
+    private DatabaseDriver _driver;
+    private readonly ChangeTracker _changeTracker;
 
-    public DbSet()
+    public DbSet(Table table, DatabaseDriver driver, ChangeTracker changeTracker) : base(new SqlQueryProvider(table, driver))
     {
+        _table = table;
+        _driver = driver;
+        _changeTracker = changeTracker;
         CheckPrimaryKey();
         if (_changeTracker == null)
         {

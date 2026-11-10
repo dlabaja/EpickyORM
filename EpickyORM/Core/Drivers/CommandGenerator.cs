@@ -19,9 +19,9 @@ public abstract class CommandGenerator
     
     public abstract string Select(Table table, QueryRoot root);
     
-    public abstract string Update(Table table, Record record, QueryWhereClause whereClause);
+    public abstract string Update(Table table, Record record, object pk);
     
-    public abstract string Delete(Table table, QueryWhereClause whereClause);
+    public abstract string Delete(Table table, object pk);
 
     public abstract string GetBinaryOperator(ExpressionType expressionType);
     
