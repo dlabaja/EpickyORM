@@ -73,4 +73,14 @@ public class SqliteTableConverter : TableConverter
             _ => obj.ToString() ?? ""
         };
     }
+
+    public override string GetSetArray(Table table, Record record)
+    {
+        return $"SET {string.Join(", ", table.Schema.SchemaAttributes.Select(GetSetItem))}";
+    }
+
+    public override string GetSetItem(SchemaAttribute attribute, int paramId)
+    {
+        return $"{attribute.Name} = @setp{paramId}";
+    }
 }

@@ -1,5 +1,7 @@
 using System.Linq.Expressions;
+using System.Text;
 using EpickyORM.Core.Drivers.SQLite;
+using EpickyORM.Core.Enums;
 using EpickyORM.Core.Structures;
 using EpickyORM.Core.Structures.Linq.QueryModel;
 using EpickyORM.Core.Structures.Linq.QueryModel.Clause;
@@ -10,7 +12,7 @@ namespace EpickyORM.Core.Drivers.Sqlite;
 public class SqliteCommandGenerator : CommandGenerator
 {
     private readonly SqliteTableConverter _converter = new();
-    
+
     public override string TryCreateTable(Table table)
     {
         return $"CREATE TABLE IF NOT EXISTS {_converter.ConvertTable(table)};";
@@ -33,10 +35,37 @@ public class SqliteCommandGenerator : CommandGenerator
         return "SELECT last_insert_rowid();";
     }
 
-    public override string Select(QueryRoot root)
+    public override string Select(Table table, QueryRoot root)
     {
-        var whereClause = root.WhereClause.Parse(this);
-        return $"SELECT * FROM  {whereClause}";
+        var builder = new StringBuilder();
+        builder.Append("SELECT");
+        builder.Append(root.DistinctClause != null ? GetDistinctClause(root.DistinctClause) : "");
+        builder.Append($"* FROM {table.Name}");
+        builder.Append(root.WhereClause != null ? GetWhereClause(root.WhereClause) : "");
+        builder.Append(root.OrderByClause != null ? GetOrderByClause(root.OrderByClause) : "");
+        builder.Append(root.LimitClause != null ? GetLimitClause(root.LimitClause) : "");
+        builder.Append(root.OffsetClause != null ? GetOffsetClause(root.OffsetClause) : "");
+
+        return $"{string.Join(" ", builder)};";
+    }
+
+    public override string Update(Table table, Record record, QueryWhereClause whereClause)
+    {
+        var builder = new StringBuilder();
+        builder.Append($"UPDATE {table.Name}");
+        builder.Append(_converter.GetSetArray(table, record));
+        builder.Append(GetWhereClause(whereClause));
+
+        return $"{string.Join(" ", builder)};";
+    }
+
+    public override string Delete(Table table, QueryWhereClause whereClause)
+    {
+        var builder = new StringBuilder();
+        builder.Append($"DELETE FROM {table.Name}");
+        builder.Append(GetWhereClause(whereClause));
+
+        return $"{string.Join(" ", builder)};";
     }
 
     public override string GetBinaryOperator(ExpressionType expressionType)
@@ -58,7 +87,8 @@ public class SqliteCommandGenerator : CommandGenerator
 
     public override string GetBinaryCondition(QueryBinaryCondition binaryCondition)
     {
-        return $"({binaryCondition.Left.Parse(this)} {GetBinaryOperator(binaryCondition.BinaryOperator)} {binaryCondition.Right.Parse(this)})";
+        return
+            $"({binaryCondition.Left.Parse(this)} {GetBinaryOperator(binaryCondition.BinaryOperator)} {binaryCondition.Right.Parse(this)})";
     }
 
     public override string GetParameter(QueryParameter parameter)
@@ -71,8 +101,44 @@ public class SqliteCommandGenerator : CommandGenerator
         return $"WHERE {whereClause.BinaryCondition.Parse(this)}";
     }
 
+    public override string GetOrderByClause(QueryOrderByClause orderByClause)
+    {
+        return
+            $"ORDER BY {orderByClause.AttributeNames.Parse(this)} {GetOrderByDirection(orderByClause.OrderDirection)}";
+    }
+
+    public override string GetDistinctClause(QueryDistinctClause distinctClause)
+    {
+        return "DISTINCT";
+    }
+
+    public override string GetLimitClause(QueryLimitClause limitClause)
+    {
+        return $"LIMIT {GetParameter(limitClause.Limit)}";
+    }
+
+    public override string GetOffsetClause(QueryOffsetClause offsetClause)
+    {
+        return $"OFFSET {GetParameter(offsetClause.OffsetCount)}";
+    }
+
     public override string GetAttributeName(QueryAttributeName attributeName)
     {
         return $"{attributeName.Name}";
+    }
+
+    public override string GetAttributeNames(QueryAttributeNames attributeNames)
+    {
+        return $"{string.Join(", ", attributeNames.Names)}";
+    }
+
+    public override string GetOrderByDirection(OrderByDirection direction)
+    {
+        return direction switch
+        {
+            OrderByDirection.ASCENDING => "ASC",
+            OrderByDirection.DESCENDING => "DESC",
+            _ => throw new Exception($"Unknown OrderBy direction {direction}")
+        };
     }
 }
