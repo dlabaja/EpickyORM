@@ -8,14 +8,10 @@ namespace EpickyORM.Core.Structures;
 // množina/kolekce záznamů
 public class DbSet<T> : SqlQueryable<T>
 {
-    private Table _table;
-    private DatabaseDriver _driver;
     private readonly ChangeTracker _changeTracker;
 
     public DbSet(Table table, DatabaseDriver driver, ChangeTracker changeTracker) : base(new SqlQueryProvider(table, driver))
     {
-        _table = table;
-        _driver = driver;
         _changeTracker = changeTracker;
         CheckPrimaryKey();
         if (_changeTracker == null)
@@ -40,13 +36,11 @@ public class DbSet<T> : SqlQueryable<T>
         }
     }
 
-    private PrimaryKey? GetPrimaryKey(T instance)
+    private object? GetPrimaryKeyValue(T instance)
     {
-        var value = typeof(T).GetProperties().FirstOrDefault(x => x.GetCustomAttribute<Attributes.PrimaryKey>() != null)
-            ?.GetValue(instance);
-        return value != null ? new PrimaryKey(value, value.GetType()) : null;
+        return typeof(T).GetProperties().FirstOrDefault(x => x.GetCustomAttribute<Attributes.PrimaryKey>() != null)?.GetValue(instance);
     }
-
+    
     public void Add(T instance)
     {
         if (instance == null)
@@ -54,8 +48,7 @@ public class DbSet<T> : SqlQueryable<T>
             return;
         }
 
-        var pk = GetPrimaryKey(instance)?.GetValue();
-
+        var pk = GetPrimaryKeyValue(instance);
         var record = new Record(instance, instance.GetType(), pk == null ? RecordAction.ADD : RecordAction.UPDATE);
         _changeTracker.Add(record);
     }
@@ -67,7 +60,7 @@ public class DbSet<T> : SqlQueryable<T>
             return;
         }
 
-        var pk = GetPrimaryKey(instance)?.GetValue();
+        var pk = GetPrimaryKeyValue(instance);
         if (pk != null)
         {
             _changeTracker.Add(new Record(instance, instance.GetType(), RecordAction.REMOVE));
