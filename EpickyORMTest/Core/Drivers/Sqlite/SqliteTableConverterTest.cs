@@ -41,7 +41,7 @@ public class SqliteTableConverterTest
     [Test]
     public void TestConvertTable()
     {
-        var table = new Table(typeof(Teacher));
+        var table = new Table<Teacher>();
         Assert.That(_converter.ConvertTable(table) ==
                     "Teacher (id INTEGER PRIMARY KEY, name TEXT, surname TEXT, titul TEXT)");
     }
@@ -49,7 +49,7 @@ public class SqliteTableConverterTest
     [Test]
     public void TestGetSchemaArray()
     {
-        var table = new Table(typeof(Teacher));
+        var table = new Table<Teacher>();
         Assert.That(_converter.GetSchemaArray(table) ==
                     "(id, name, surname, titul)");
     }
@@ -57,9 +57,9 @@ public class SqliteTableConverterTest
     [Test]
     public void TestGetValuesArray()
     {
-        var table = new Table(typeof(Teacher));
+        var table = new Table<Teacher>();
         var obj = new Teacher { Name = "Jan", Surname = "Novák", Titul = "doc" };
-        var record = new Record(obj, typeof(Teacher), RecordAction.ADD);
+        var record = new Record<Teacher>(obj, RecordAction.ADD);
         Assert.That(_converter.GetValuesArray(table, record) ==
                     """(0, "Jan", "Novák", "doc")""");
     }
@@ -67,11 +67,11 @@ public class SqliteTableConverterTest
     [Test]
     public void TestGetMultipleValuesArray()
     {
-        var table = new Table(typeof(Teacher));
+        var table = new Table<Teacher>();
         var obj1 = new Teacher { Name = "Jan", Surname = "Novák", Titul = "doc" };
         var obj2 = new Teacher { Name = "Jana", Surname = "Nováková", Titul = "prof" };
-        var record1 = new Record(obj1, typeof(Teacher), RecordAction.ADD);
-        var record2 = new Record(obj2, typeof(Teacher), RecordAction.ADD);
+        var record1 = new Record<Teacher>(obj1, RecordAction.ADD);
+        var record2 = new Record<Teacher>(obj2, RecordAction.ADD);
         Assert.That(_converter.GetMultipleValuesArray(table, [record1, record2]) ==
                     """(0, "Jan", "Novák", "doc"), (0, "Jana", "Nováková", "prof")""");
     }

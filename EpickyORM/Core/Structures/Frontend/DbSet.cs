@@ -11,7 +11,7 @@ public class DbSet<T> : SqlQueryable<T>
 {
     private readonly ChangeTracker _changeTracker;
 
-    public DbSet(Table table, DatabaseDriver driver, ChangeTracker changeTracker) : base(new SqlQueryProvider(table, driver))
+    public DbSet(Table<T> table, DatabaseDriver driver, ChangeTracker changeTracker) : base(new SqlQueryProvider<T>(table, driver))
     {
         _changeTracker = changeTracker;
         CheckPrimaryKey();
@@ -50,7 +50,7 @@ public class DbSet<T> : SqlQueryable<T>
         }
 
         var pk = GetPrimaryKeyValue(instance);
-        var record = new Record(instance, instance.GetType(), pk == null ? RecordAction.ADD : RecordAction.UPDATE);
+        var record = new Record<T>(instance, pk == null ? RecordAction.ADD : RecordAction.UPDATE);
         _changeTracker.Add(record);
     }
 
@@ -64,7 +64,7 @@ public class DbSet<T> : SqlQueryable<T>
         var pk = GetPrimaryKeyValue(instance);
         if (pk != null)
         {
-            _changeTracker.Add(new Record(instance, instance.GetType(), RecordAction.REMOVE));
+            _changeTracker.Add(new Record<T>(instance, RecordAction.REMOVE));
         }
     }
 }

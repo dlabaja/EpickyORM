@@ -20,15 +20,15 @@ public abstract class DatabaseDriver
 
     public abstract List<object?> ExecuteScalar(string[] commands);
     
-    public abstract void TryCreateTable(Table table);
+    public abstract void TryCreateTable<T>(Table<T> table);
     
-    public abstract void DropTable(Table table);
+    public abstract void DropTable<T>(Table<T> table);
 
-    public abstract void Insert(Table table, List<Record> records, out int newId);
+    public abstract void Insert<T>(Table<T> table, List<Record<T>> records, out int newId);
 
-    public abstract List<Record> Select(Table table, QueryRoot root);
+    public abstract List<Record<T>> Select<T>(Table<T> table, QueryRoot<T> root);
 
-    public abstract void Update(Table table, List<Record> records);
+    public abstract void Update<T>(Table<T> table, List<Record<T>> records);
 
-    public abstract void Delete(Table table, List<Record> records);
+    public abstract void Delete<T>(Table<T> table, List<Record<T>> records);
 }

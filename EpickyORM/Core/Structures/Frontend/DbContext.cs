@@ -50,15 +50,15 @@ public abstract class DbContext
 
         foreach (var property in properties)
         {
-            var type = property.PropertyType.GetGenericArguments()[0];
-            var dbSet = typeof(DbSet<>).MakeGenericType(type);
-
             var tableType = property.PropertyType.GetGenericArguments()[0];
-            var table = new Table(tableType);
+            var dbSetType = typeof(DbSet<>).MakeGenericType(tableType);
+
+            var tableGenericType = typeof(Table<>).MakeGenericType(tableType);
+            var table = Activator.CreateInstance(tableGenericType);
             _changeTracker.RegisterTable(table);
 
             // tvorba instance, uložím ji do Contextu
-            var instance = Activator.CreateInstance(dbSet, table, Driver, _changeTracker);
+            var instance = Activator.CreateInstance(dbSetType, table, Driver, _changeTracker);
             if (property.CanWrite) // má setter
             {
                 property.SetValue(this, instance);
@@ -81,13 +81,14 @@ public abstract class DbContext
 
         foreach (var table in _changeTracker.Tables)
         {
-            Driver.TryCreateTable(table);
+            var t = (table.GetType())table;
+            Driver.TryCreateTable(t);
         }
 
         _triedCreatingTables = true;
     }
 
-    private void ProcessRecordsToAdd(DatabaseDriver driver, Table table, List<Record> records)
+    private void ProcessRecordsToAdd<T>(DatabaseDriver driver, Table<T> table, List<Record<T>> records)
     {
         if (records.Count == 0)
         {
@@ -102,7 +103,7 @@ public abstract class DbContext
         }
     }
 
-    private void ProcessRecordsToUpdate(DatabaseDriver driver, Table table, List<Record> records)
+    private void ProcessRecordsToUpdate<T>(DatabaseDriver driver, Table<T> table, List<Record<T>> records)
     {
         if (records.Count == 0)
         {
@@ -111,7 +112,7 @@ public abstract class DbContext
         driver.Update(table, records);
     }
 
-    private void ProcessRecordsToRemove(DatabaseDriver driver, Table table, List<Record> records)
+    private void ProcessRecordsToRemove<T>(DatabaseDriver driver, Table<T> table, List<Record<T>> records)
     {
         if (records.Count == 0)
         {

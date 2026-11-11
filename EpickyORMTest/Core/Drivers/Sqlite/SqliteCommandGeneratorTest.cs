@@ -17,7 +17,7 @@ public class SqliteCommandGeneratorTest
     [Test]
     public void TestCreateTable()
     {
-        var table = new Table(typeof(Teacher));
+        var table = new Table<Teacher>();
         Assert.That(_generator.TryCreateTable(table), Is.EqualTo(
             "CREATE TABLE IF NOT EXISTS Teacher (id INTEGER PRIMARY KEY, name TEXT, surname TEXT, titul TEXT);"));
     }
@@ -25,7 +25,7 @@ public class SqliteCommandGeneratorTest
     [Test]
     public void TestDropTable()
     {
-        var table = new Table(typeof(Teacher));
+        var table = new Table<Teacher>();
         Assert.That(_generator.DropTable(table), Is.EqualTo(
             "DROP TABLE Teacher;"));
     }
@@ -33,12 +33,12 @@ public class SqliteCommandGeneratorTest
     [Test]
     public void TestInsert()
     {
-        var table = new Table(typeof(Teacher));
+        var table = new Table<Teacher>();
         
         var obj1 = new Teacher { Name = "Jan", Surname = "Novák", Titul = "doc" };
         var obj2 = new Teacher { Name = "Jana", Surname = "Nováková", Titul = "prof" };
-        var record1 = new Record(obj1, typeof(Teacher), RecordAction.ADD);
-        var record2 = new Record(obj2, typeof(Teacher), RecordAction.ADD);
+        var record1 = new Record<Teacher>(obj1, RecordAction.ADD);
+        var record2 = new Record<Teacher>(obj2, RecordAction.ADD);
 
         Console.WriteLine(_generator.Insert(table, [record1, record2]));
         Assert.That(_generator.Insert(table, [record1, record2]), Is.EqualTo(

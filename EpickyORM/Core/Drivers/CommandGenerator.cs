@@ -10,19 +10,19 @@ namespace EpickyORM.Core.Drivers;
 
 public abstract class CommandGenerator
 {
-    public abstract string TryCreateTable(Table table);
+    public abstract string TryCreateTable<T>(Table<T> table);
 
-    public abstract string DropTable(Table table);
+    public abstract string DropTable<T>(Table<T> table);
 
-    public abstract string Insert(Table table, List<Record> records);
+    public abstract string Insert<T>(Table<T> table, List<Record<T>> records);
 
     public abstract string GetLastId();
     
-    public abstract string Select(Table table, QueryRoot root);
+    public abstract string Select<T>(Table<T> table, QueryRoot<T> root);
     
-    public abstract string Update(Table table, Record record, object pk);
+    public abstract string Update<T>(Table<T> table, Record<T> record, object pk);
     
-    public abstract string Delete(Table table, object pk);
+    public abstract string Delete<T>(Table<T> table, object pk);
 
     public abstract string GetBinaryOperator(ExpressionType expressionType);
     

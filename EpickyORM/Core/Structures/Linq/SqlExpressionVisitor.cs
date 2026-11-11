@@ -10,17 +10,17 @@ namespace EpickyORM.Core.Structures.Linq;
 
 // projdu LINQ strom a namapuju si ho na svůj Query strom
 // hodně mi pomohl tenhle blog: https://jordansrowles.medium.com/building-a-custom-linq-provider-in-net-a987dc983381
-public class SqlExpressionVisitor : ExpressionVisitor
+public class SqlExpressionVisitor<T> : ExpressionVisitor
 {
     private int _currentParamId;
-    private readonly QueryRoot _root;
+    private readonly QueryRoot<T> _root;
 
-    public SqlExpressionVisitor(Table table)
+    public SqlExpressionVisitor(Table<T> table)
     {
-        _root = new QueryRoot(table);
+        _root = new QueryRoot<T>(table);
     }
 
-    public QueryRoot Build(Expression expression)
+    public QueryRoot<T> Build(Expression expression)
     {
         Visit(expression);
         return _root;

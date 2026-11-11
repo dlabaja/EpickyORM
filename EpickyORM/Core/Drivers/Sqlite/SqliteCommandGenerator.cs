@@ -13,17 +13,17 @@ public class SqliteCommandGenerator : CommandGenerator
 {
     private readonly SqliteTableConverter _converter = new();
 
-    public override string TryCreateTable(Table table)
+    public override string TryCreateTable<T>(Table<T> table)
     {
         return $"CREATE TABLE IF NOT EXISTS {_converter.ConvertTable(table)};";
     }
 
-    public override string DropTable(Table table)
+    public override string DropTable<T>(Table<T> table)
     {
         return $"DROP TABLE {table.Name};";
     }
 
-    public override string Insert(Table table, List<Record> records)
+    public override string Insert<T>(Table<T> table, List<Record<T>> records)
     {
         return
             $"INSERT INTO {table.Name} {_converter.GetSchemaArray(table)} VALUES {_converter.GetMultipleValuesArray(table, records)};";
@@ -35,7 +35,7 @@ public class SqliteCommandGenerator : CommandGenerator
         return "SELECT last_insert_rowid();";
     }
 
-    public override string Select(Table table, QueryRoot root)
+    public override string Select<T>(Table<T> table, QueryRoot<T> root)
     {
         var builder = new List<string?>();
         builder.Add("SELECT");
@@ -49,7 +49,7 @@ public class SqliteCommandGenerator : CommandGenerator
         return $"{string.Join(" ", builder)};";
     }
 
-    public override string Update(Table table, Record record, object pk)
+    public override string Update<T>(Table<T> table, Record<T> record, object pk)
     {
         var builder = new List<string?>();
         builder.Add($"UPDATE {table.Name}");
@@ -60,7 +60,7 @@ public class SqliteCommandGenerator : CommandGenerator
         return $"{string.Join(" ", builder)};";
     }
 
-    public override string Delete(Table table, object pk)
+    public override string Delete<T>(Table<T> table, object pk)
     {
         var builder = new List<string?>();
         builder.Add($"DELETE FROM {table.Name}");

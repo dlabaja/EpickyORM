@@ -43,23 +43,23 @@ public class SqliteTableConverter : TableConverter
         return $"{schemaAttribute.Name.ToSnakeCase()} {ConvertType(Type.GetTypeCode(schemaAttribute.Type))} {pkText}".Trim();
     }
 
-    public override string ConvertTable(Table table)
+    public override string ConvertTable<T>(Table<T> table)
     {
         return $"{table.Name} ({string.Join(", ", table.Schema.SchemaAttributes.Select(ConvertTableAttribute))})";
     }
 
-    public override string GetSchemaArray(Table table)
+    public override string GetSchemaArray<T>(Table<T> table)
     {
         return $"({string.Join(", ", table.Schema.SchemaAttributes.Select(x => x.Name))})";
     }
 
-    public override string GetValuesArray(Table table, Record record)
+    public override string GetValuesArray<T>(Table<T> table, Record<T> record)
     {
         return $"({string.Join(", ", table.GetRecordValues(record)
             .Select(x => x.Item2 == null ? "" : FormatValue(x.Item2)))})";
     }
     
-    public override string GetMultipleValuesArray(Table table, List<Record> records)
+    public override string GetMultipleValuesArray<T>(Table<T> table, List<Record<T>> records)
     {
         return $"{string.Join(", ", records.Select(x => GetValuesArray(table, x)))}";
     }
@@ -75,7 +75,7 @@ public class SqliteTableConverter : TableConverter
         };
     }
 
-    public override string GetSetArray(Table table, Record record)
+    public override string GetSetArray<T>(Table<T> table, Record<T> record)
     {
         return $"SET {string.Join(", ", table.Schema.SchemaAttributes.Select(GetSetItem))}";
     }

@@ -4,28 +4,26 @@ using EpickyORM.Core.Utils;
 
 namespace EpickyORM.Core.Structures.Backend;
 
-public class Table
+public class Table<T>
 {
     public string Name { get; }
     public Schema Schema { get; }
-    public Type Type { get; }
-    private Dictionary<SchemaAttribute, Func<object, object?>> _getters = new();
-    private Dictionary<SchemaAttribute, Action<object, object>> _setters = new();
-    private List<Record> _records = [];
+    private readonly Dictionary<SchemaAttribute, Func<object, object?>> _getters = new();
+    private readonly Dictionary<SchemaAttribute, Action<object, object>> _setters = new();
+    private readonly List<Record<T>> _records = [];
     
     // tohle by teoreticky mohla být generická třída, ale pak bych je nemohl spojovat do kolekcí (každá tabulka má jinej typ)
-    public Table(Type type)
+    public Table()
     {
-        Type = type;
-        Name = Type.Name;
+        Name = typeof(T).Name;
         Schema = GenerateSchema();
     }
 
     private Schema GenerateSchema()
     {
-        var properties = Type.GetProperties().Where(x => x.GetCustomAttribute<Ignore>() == null);
-        var fields = Type.GetFields().Where(x => x.GetCustomAttribute<Include>() != null);
-        var primaryKey = Type.GetProperties().FirstOrDefault(x => x.GetCustomAttribute<Attributes.PrimaryKey>() != null);
+        var properties = typeof(T).GetProperties().Where(x => x.GetCustomAttribute<Ignore>() == null);
+        var fields = typeof(T).GetFields().Where(x => x.GetCustomAttribute<Include>() != null);
+        var primaryKey = typeof(T).GetProperties().FirstOrDefault(x => x.GetCustomAttribute<PrimaryKey>() != null);
         if (primaryKey == null)
         {
             throw new Exception("No primary key found");
@@ -51,42 +49,32 @@ public class Table
         return new Schema(schemaAttributes);
     }
 
-    public List<(SchemaAttribute x, object?)> GetRecordValues(Record record)
+    public List<(SchemaAttribute x, object?)> GetRecordValues(Record<T> record)
     {
-        if (!FulfillsSchema(record))
-        {
-            throw new Exception($"Cannot get Record value - Record of type {record.Type} doesn't fullfill schema of {Type}");
-        }
-
-        return Schema.SchemaAttributes.Select(x => (x, _getters[x].Invoke(record.Instance))).ToList();
+        return [.. Schema.SchemaAttributes.Select(x => (x, _getters[x].Invoke(record.Instance)))];
     }
 
-    public bool FulfillsSchema(Record record)
-    {
-        return Type == record.Type;
-    }
-
-    public object? GetValue(SchemaAttribute schemaAttribute, Record record)
+    public object? GetValue(SchemaAttribute schemaAttribute, Record<T> record)
     {
         return _getters[schemaAttribute].Invoke(record.Instance);
     }
 
-    public void SetValue(SchemaAttribute schemaAttribute, Record record, object value)
+    public void SetValue(SchemaAttribute schemaAttribute, Record<T> record, object value)
     {
         _setters[schemaAttribute].Invoke(record.Instance, value);
     }
 
-    public void Add(Record record)
+    public void Add(Record<T> record)
     {
         _records.Add(record);
     }
 
-    public List<Record> GetRecords()
+    public List<Record<T>> GetRecords()
     {
         return _records;
     }
 
-    public object GetRecordPk(Record record)
+    public object GetRecordPk(Record<T> record)
     {
         return GetValue(Schema.GetPrimaryKeyAttribute(), record) ?? throw new Exception("This record has no primary key");
     }

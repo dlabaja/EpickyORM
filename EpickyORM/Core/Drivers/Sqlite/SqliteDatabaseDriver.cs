@@ -62,26 +62,26 @@ public class SqliteDatabaseDriver : DatabaseDriver
         }
     }
 
-    public override void TryCreateTable(Table table)
+    public override void TryCreateTable<T>(Table<T> table)
     {
         Execute([_generator.TryCreateTable(table)]);
     }
 
-    public override void DropTable(Table table)
+    public override void DropTable<T>(Table<T> table)
     {
         Execute([_generator.DropTable(table)]);
     }
 
-    public override void Insert(Table table, List<Record> records, out int lastNewId)
+    public override void Insert<T>(Table<T> table, List<Record<T>> records, out int lastNewId)
     {
         lastNewId = 0;
         var objects = ExecuteScalar([_generator.Insert(table, records), _generator.GetLastId()]);
         TryParse(objects.Last()?.ToString(), out lastNewId);
     }
 
-    public override List<Record> Select(Table table, QueryRoot root)
+    public override List<Record<T>> Select<T>(Table<T> table, QueryRoot<T> root)
     {
-        var result = new List<Record>();
+        var result = new List<Record<T>>();
         var objects = ExecuteScalar([_generator.Select(table, root)]);
         foreach (var obj in objects)
         {
@@ -90,20 +90,20 @@ public class SqliteDatabaseDriver : DatabaseDriver
                 continue;
             }
 
-            result.Add(new Record(obj, table.Type, RecordAction.NONE));
+            result.Add(new Record<T>((T)obj, RecordAction.NONE));
         }
 
         return result;
     }
 
-    public override void Update(Table table, List<Record> records)
+    public override void Update<T>(Table<T> table, List<Record<T>> records)
     {
         Execute([
             .. records.Select(x => _generator.Update(table, x, table.GetRecordPk(x)))
         ]);
     }
 
-    public override void Delete(Table table, List<Record> records)
+    public override void Delete<T>(Table<T> table, List<Record<T>> records)
     {
         Execute([
             .. records.Select(x => _generator.Delete(table, table.GetRecordPk(x)))
