@@ -5,7 +5,7 @@ namespace EpickyORM.Core.Structures.Backend;
 public class Record<T>
 {
     public T Instance { get; }
-    public RecordAction RecordAction { get; private set; }
+    public RecordAction RecordAction { get; set; }
 
     public Record(T instance, RecordAction action)
     {

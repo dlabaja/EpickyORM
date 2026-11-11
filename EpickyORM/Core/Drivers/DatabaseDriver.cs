@@ -1,6 +1,7 @@
 using EpickyORM.Core.Structures;
 using EpickyORM.Core.Structures.Backend;
 using EpickyORM.Core.Structures.Linq.QueryModel;
+using Microsoft.Data.Sqlite;
 
 namespace EpickyORM.Core.Drivers;
 
@@ -14,11 +15,15 @@ public abstract class DatabaseDriver
     {
         ConnectionString = connectionString;
     }
+    
+    protected abstract T ExecuteInTransaction<T>(Func<SqliteConnection, SqliteTransaction, T> action);
 
     // je to public hlavně kvůli testům, ale i tak se to může někdy hodit
-    public abstract void Execute(string[] commands, ParameterKeeper? keeper = null);
+    public abstract void ExecuteVoid(string[] commands, ParameterKeeper? keeper = null);
 
     public abstract List<object?> ExecuteScalar(string[] commands, ParameterKeeper? keeper = null);
+    
+    public abstract List<Record<T>> ExecuteReader<T>(string[] commands, Table<T> table, ParameterKeeper? keeper = null);
     
     public abstract void TryCreateTable<T>(Table<T> table);
     

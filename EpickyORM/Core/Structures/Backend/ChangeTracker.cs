@@ -1,13 +1,32 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using EpickyORM.Core.Enums;
+using System.IO.Hashing;
+using System.Text;
 
 namespace EpickyORM.Core.Structures.Backend;
 
 // tahle třída je důvod proč mám radši TypeScript, striktní typy jsou strašně omezující, pomoc
 public class ChangeTracker
 {
-    private Dictionary<Type, dynamic> _tables = new();
-
     public List<dynamic> Tables => [.. _tables.Values];
+    private Dictionary<Type, dynamic> _tables = new();
+    // otisky objektů 
+    private Dictionary<object, ulong> _snapshots = new();
+
+    private JsonSerializerOptions _options = new()
+    {
+        IncludeFields = true,
+        ReferenceHandler = ReferenceHandler.IgnoreCycles
+    };
+
+    // serializuje třídu a udělá z ní hash (šetří místo)
+    // XxHash3 by měl být celkem rychlej a má jenom 64b
+    private ulong Hash(object instance)
+    {
+        var json = JsonSerializer.Serialize(instance, _options);
+        return XxHash3.HashToUInt64(Encoding.UTF8.GetBytes(json));
+    }
 
     public void RegisterTable(object table)
     {
@@ -23,11 +42,22 @@ public class ChangeTracker
         GetTable<T>().Add(record);
     }
 
+    public bool ObjectChanged(object instance)
+    {
+        if (!_snapshots.TryGetValue(instance, out var hash))
+        {
+            return false;
+        }
+
+        return hash != Hash(instance);
+    }
+
     public Table<T> GetTable<T>()
     {
         return (Table<T>)_tables[typeof(T)];
     }
 
+    // tohle se actually používá, ale přes reflexi takže to nejde vidět
     public List<Record<T>> GetRecords<T>(RecordAction action)
     {
         return GetTable<T>().GetRecords().Where(x => x.RecordAction == action).ToList();
@@ -40,6 +70,19 @@ public class ChangeTracker
             var tableType = table.GetType();
             var method = tableType.GetMethod("Flush")!;
             method.Invoke(table, null);
+            
+            foreach (var record in table.GetRecords())
+            {
+                if (record.RecordAction != RecordAction.NONE)
+                {
+                    continue;
+                }
+                
+                if (!_snapshots.TryAdd(record.Instance, Hash(record.Instance)))
+                {
+                    _snapshots[record.Instance] = Hash(record.Instance);
+                }
+            }
         }
     }
 }

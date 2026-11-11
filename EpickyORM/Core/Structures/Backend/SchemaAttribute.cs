@@ -4,7 +4,7 @@ public class SchemaAttribute
 {
     public string Name { get; }
     public Type Type { get; }
-    public bool IsPk { get; } 
+    public bool IsPk { get; }
 
     public SchemaAttribute(string name, Type type, bool isPk)
     {

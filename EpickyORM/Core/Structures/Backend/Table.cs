@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Reflection;
 using EpickyORM.Core.Attributes;
 using EpickyORM.Core.Utils;
@@ -61,7 +62,12 @@ public class Table<T>
 
     public void SetValue(SchemaAttribute schemaAttribute, Record<T> record, object value)
     {
-        _setters[schemaAttribute].Invoke(record.Instance, value);
+        SetValue(schemaAttribute, record, value);
+    }
+    
+    public void SetValue(SchemaAttribute schemaAttribute, object instance, object value)
+    {
+        _setters[schemaAttribute].Invoke(instance, value);
     }
 
     public void Add(Record<T> record)
@@ -72,6 +78,12 @@ public class Table<T>
     public List<Record<T>> GetRecords()
     {
         return _records;
+    }
+    
+    // chtěl jsem si udělat hashset klíčů, ale to bych musel udržovat
+    public HashSet<object> GetPks()
+    {
+        return [.. _records.Select(GetRecordPk)];
     }
 
     public object GetRecordPk(Record<T> record)

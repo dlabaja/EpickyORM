@@ -19,7 +19,7 @@ public class SqliteDatabaseDriver : DatabaseDriver
     // https://www.sqlitetutorial.net/sqlite-csharp/create-tables/
     // connection by se měl automaticky poolovat, takže můžu udělat jeden na každej příkaz
     // transakce kromě možnosti rollbacku umožňuje nešahat kvůli každému příkazu na disk
-    public override void Execute(string[] commands, ParameterKeeper? keeper = null)
+    protected override T ExecuteInTransaction<T>(Func<SqliteConnection, SqliteTransaction, T> action)
     {
         using var connection = new SqliteConnection(ConnectionString);
         connection.Open();
@@ -27,20 +27,9 @@ public class SqliteDatabaseDriver : DatabaseDriver
         using var transaction = connection.BeginTransaction();
         try
         {
-            foreach (var command in commands)
-            {
-                using var cmd = new SqliteCommand(command, connection, transaction);
-                if (keeper != null && keeper.Parameters.Count > 0)
-                {
-                    cmd.Parameters.AddRange(keeper.Parameters
-                        .Select(x =>
-                            new SqliteParameter(_generator.GetParameter(x.Value, keeper), _generator.GetValue(x.Value))));
-                }
-
-                cmd.ExecuteNonQuery();
-            }
-
+            var result = action(connection, transaction);
             transaction.Commit();
+            return result;
         }
         catch (Exception e)
         {
@@ -49,13 +38,33 @@ public class SqliteDatabaseDriver : DatabaseDriver
         }
     }
 
+    // nevrací nic
+    public override void ExecuteVoid(string[] commands, ParameterKeeper? keeper = null)
+    {
+        ExecuteInTransaction((connection, transaction) =>
+        {
+            foreach (var command in commands)
+            {
+                using var cmd = new SqliteCommand(command, connection, transaction);
+                if (keeper != null && keeper.Parameters.Count > 0)
+                {
+                    cmd.Parameters.AddRange(keeper.Parameters
+                        .Select(x =>
+                            new SqliteParameter(_generator.GetParameter(x.Value, keeper),
+                                _generator.GetValue(x.Value))));
+                }
+
+                cmd.ExecuteNonQuery();
+            }
+
+            return new { }; // placeholder, stejně se ignoruje
+        });
+    }
+
+    // vrací číslo
     public override List<object?> ExecuteScalar(string[] commands, ParameterKeeper? keeper = null)
     {
-        using var connection = new SqliteConnection(ConnectionString);
-        connection.Open();
-
-        using var transaction = connection.BeginTransaction();
-        try
+        return ExecuteInTransaction((connection, transaction) =>
         {
             var result = new List<object?>();
             foreach (var command in commands)
@@ -65,30 +74,80 @@ public class SqliteDatabaseDriver : DatabaseDriver
                 {
                     cmd.Parameters.AddRange(keeper.Parameters
                         .Select(x =>
-                            new SqliteParameter(_generator.GetParameter(x.Value, keeper), _generator.GetValue(x.Value))));
+                            new SqliteParameter(_generator.GetParameter(x.Value, keeper),
+                                _generator.GetValue(x.Value))));
                 }
 
                 result.Add(cmd.ExecuteScalar());
             }
 
-            transaction.Commit();
             return result;
-        }
-        catch (Exception e)
+        });
+    }
+
+    // vrací tabulku
+    public override List<Record<T>> ExecuteReader<T>(string[] commands, Table<T> table, ParameterKeeper? keeper = null)
+    {
+        return ExecuteInTransaction((connection, transaction) =>
         {
-            transaction.Rollback();
-            throw new Exception("Error in my ORM ExecuteScalar, it's still Epicky though: " + e.Message);
-        }
+            var result = new List<Record<T>>();
+            foreach (var command in commands)
+            {
+                using var cmd = new SqliteCommand(command, connection, transaction);
+                if (keeper != null && keeper.Parameters.Count > 0)
+                {
+                    cmd.Parameters.AddRange(keeper.Parameters
+                        .Select(x =>
+                            new SqliteParameter(_generator.GetParameter(x.Value, keeper),
+                                _generator.GetValue(x.Value))));
+                }
+
+                var reader = cmd.ExecuteReader();
+                var pks = table.GetPks();
+                while (reader.Read())
+                {
+                    var instance = Activator.CreateInstance<T>();
+                    var pk = table.Schema.GetPrimaryKeyAttribute();
+                    var isDuplicate = false;
+                    for (var i = 0; i < reader.FieldCount; i++)
+                    {
+                        var columnName = reader.GetName(i);
+                        // byl jsem chytrej a schéma atributy se jmenujou stejně jako sloupce
+                        var schemaAttribute = table.Schema.SchemaAttributes.First(x => x.Name == columnName);
+                        var value = Convert.ChangeType(reader.GetValue(i), schemaAttribute.Type);
+                        if (columnName == pk.Name && pks.Contains(value))
+                        {
+                            // pokud už mám v tabulce Record kterej má stejný id, pak přeskakuju
+                            isDuplicate = true;
+                            break;
+                        }
+
+                        table.SetValue(schemaAttribute, instance, Convert.ChangeType(value, schemaAttribute.Type));
+                    }
+
+                    if (isDuplicate)
+                    {
+                        continue;
+                    }
+
+                    var record = new Record<T>(instance, RecordAction.NONE);
+                    table.Add(record);
+                    result.Add(record);
+                }
+            }
+
+            return result;
+        });
     }
 
     public override void TryCreateTable<T>(Table<T> table)
     {
-        Execute([_generator.TryCreateTable(table)]);
+        ExecuteVoid([_generator.TryCreateTable(table)]);
     }
 
     public override void DropTable<T>(Table<T> table)
     {
-        Execute([_generator.DropTable(table)]);
+        ExecuteVoid([_generator.DropTable(table)]);
     }
 
     public override void Insert<T>(Table<T> table, List<Record<T>> records, ParameterKeeper keeper, out int lastNewId)
@@ -100,31 +159,19 @@ public class SqliteDatabaseDriver : DatabaseDriver
 
     public override List<Record<T>> Select<T>(Table<T> table, QueryRoot<T> root)
     {
-        var result = new List<Record<T>>();
-        var objects = ExecuteScalar([_generator.Select(table, root)], root.Keeper);
-        foreach (var obj in objects)
-        {
-            if (obj == null)
-            {
-                continue;
-            }
-
-            result.Add(new Record<T>((T)obj, RecordAction.NONE));
-        }
-
-        return result;
+        return ExecuteReader([_generator.Select(table, root)], table, root.Keeper);
     }
 
     public override void Upsert<T>(Table<T> table, List<Record<T>> records, ParameterKeeper keeper)
     {
-        Execute([
+        ExecuteVoid([
             .. records.Select(x => _generator.Upsert(table, x, table.GetRecordPk(x), keeper))
         ], keeper);
     }
 
     public override void Delete<T>(Table<T> table, List<Record<T>> records, ParameterKeeper keeper)
     {
-        Execute([
+        ExecuteVoid([
             .. records.Select(x => _generator.Delete(table, table.GetRecordPk(x)))
         ], keeper);
     }

@@ -27,6 +27,13 @@ public class SqlExpressionVisitor<T> : ExpressionVisitor
     protected override Expression VisitMethodCall(MethodCallExpression node)
     {
         Visit(node.Arguments[0]); // rekurzivně jdu hledat další metody
+
+        // Count a podobné mají jen jeden argument = source
+        if (node.Arguments.Count == 1)
+        {
+            return node;
+        }
+        
         var content = node.Arguments[1];
         switch (node.Method.Name)
         {
@@ -71,7 +78,8 @@ public class SqlExpressionVisitor<T> : ExpressionVisitor
             LambdaExpression lambda => ParseExpression(lambda.Body), // (e => e.Arg) -> e.Arg
             NewExpression nexp => new QueryAttributeNames(nexp.Arguments
                 .Select(x => (QueryAttributeName)ParseExpression(x)).ToList()), // (x.Atr1, x.Atr2) -> Atr1, Atr2
-            ConstantExpression param => ConstantExpr(param), 
+            ConstantExpression param => ConstantExpr(param),
+            UnaryExpression unexp => ParseExpression(unexp.Operand), // {x => ...} je unary, s tím jsem moc nepočítal 
             _ => throw new Exception("Unsupported expression")
         };
     }

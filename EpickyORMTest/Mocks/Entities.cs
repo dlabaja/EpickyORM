@@ -1,6 +1,12 @@
 using EpickyORM.Core.Attributes;
+using EpickyORM.Core.Structures.Frontend;
 
 namespace EpickyORMTest.Mocks;
+
+public class MyContext : DbContext
+{
+    public DbSet<Teacher> Teachers { get; }
+}
 
 class Predmet
 {
@@ -13,7 +19,7 @@ class Predmet
     public string _ignoredAsWell;
 }
 
-class Teacher
+public class Teacher
 {
     [PrimaryKey] public int Id { get; set; } 
     public string Name { get; set; }

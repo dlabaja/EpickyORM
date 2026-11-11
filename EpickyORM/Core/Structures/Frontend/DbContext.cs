@@ -83,6 +83,24 @@ public abstract class DbContext
                 .Invoke(Driver, new object[] { table });
         }
     }
+    
+    // nechávám stejnej signature abych nemusel přepisovat tu reflexi dole, stejně je to jedno
+    private void ProcessRecordsToCheck<T>(DatabaseDriver driver, Table<T> table, List<Record<T>> _records)
+    {
+        var records = _records.Where(x => x.RecordAction == RecordAction.NONE).ToList();
+        foreach (var record in records)
+        {
+            if (record.Instance == null)
+            {
+                continue;
+            }
+            
+            if (_changeTracker.ObjectChanged(record.Instance))
+            {
+                record.RecordAction = RecordAction.UPDATE;
+            }
+        }
+    }
 
     // btw v těhle dynamicky invokovaných metodách nefungují breakpointy, yay
     private void ProcessRecordsToAdd<T>(DatabaseDriver driver, Table<T> table, List<Record<T>> _records)
@@ -96,7 +114,7 @@ public abstract class DbContext
         var startId = lastNewId - (records.Count - 1);
         foreach (var record in records)
         {
-            table.SetValue(table.Schema.GetPrimaryKeyAttribute(), record, startId);
+            table.SetValue(table.Schema.GetPrimaryKeyAttribute(), record.Instance, startId);
             startId++;
         }
     }
@@ -132,6 +150,7 @@ public abstract class DbContext
             var getRecordsMethod = tableType.GetMethod("GetRecords")!;
             var records = getRecordsMethod.Invoke(table, null);
 
+            InvokeProcessMethod(nameof(ProcessRecordsToCheck), entityType, table, records);
             InvokeProcessMethod(nameof(ProcessRecordsToAdd), entityType, table, records);
             InvokeProcessMethod(nameof(ProcessRecordsToUpdate), entityType, table, records);
             InvokeProcessMethod(nameof(ProcessRecordsToRemove), entityType, table, records);
