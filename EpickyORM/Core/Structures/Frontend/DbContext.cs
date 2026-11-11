@@ -110,7 +110,7 @@ public abstract class DbContext
         {
             return;
         }
-        driver.Update(table, records);
+        driver.Upsert(table, records);
     }
 
     private void ProcessRecordsToRemove<T>(DatabaseDriver driver, Table<T> table, List<Record<T>> _records)
@@ -123,7 +123,7 @@ public abstract class DbContext
         driver.Delete(table, records);
     }
 
-    // nevím jak se mi to povedlo, ale po asi hodině jsem znásilnil C# natolik že mi dovolil mít dynamický Tabulky v ChangeTrackeru
+    // nevím jak se mi to povedlo, ale po asi hodině jsem znásilnil C# natolik že mi dovolil mít dynamický tabulky v ChangeTrackeru
     public void SaveChanges()
     {
         foreach (var table in _changeTracker.Tables)

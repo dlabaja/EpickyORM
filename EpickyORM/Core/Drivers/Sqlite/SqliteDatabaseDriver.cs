@@ -96,10 +96,10 @@ public class SqliteDatabaseDriver : DatabaseDriver
         return result;
     }
 
-    public override void Update<T>(Table<T> table, List<Record<T>> records)
+    public override void Upsert<T>(Table<T> table, List<Record<T>> records)
     {
         Execute([
-            .. records.Select(x => _generator.Update(table, x, table.GetRecordPk(x)))
+            .. records.Select(x => _generator.Upsert(table, x, table.GetRecordPk(x)))
         ]);
     }
 

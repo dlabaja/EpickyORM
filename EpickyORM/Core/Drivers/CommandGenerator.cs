@@ -20,7 +20,7 @@ public abstract class CommandGenerator
     
     public abstract string Select<T>(Table<T> table, QueryRoot<T> root);
     
-    public abstract string Update<T>(Table<T> table, Record<T> record, object pk);
+    public abstract string Upsert<T>(Table<T> table, Record<T> record, object pk);
     
     public abstract string Delete<T>(Table<T> table, object pk);
 

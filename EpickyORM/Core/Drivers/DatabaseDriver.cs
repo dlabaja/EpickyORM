@@ -28,7 +28,8 @@ public abstract class DatabaseDriver
 
     public abstract List<Record<T>> Select<T>(Table<T> table, QueryRoot<T> root);
 
-    public abstract void Update<T>(Table<T> table, List<Record<T>> records);
+    // pokud někdo vytvoří entitu a upraví si sám PK, pak by update zhučel protože by takové PK neexistovalo. UPSERT to jistí 
+    public abstract void Upsert<T>(Table<T> table, List<Record<T>> records);
 
     public abstract void Delete<T>(Table<T> table, List<Record<T>> records);
 }

@@ -37,35 +37,49 @@ public class SqliteCommandGenerator : CommandGenerator
 
     public override string Select<T>(Table<T> table, QueryRoot<T> root)
     {
-        var builder = new List<string?>();
-        builder.Add("SELECT");
-        builder.Add(root.DistinctClause != null ? GetDistinctClause(root.DistinctClause) : "");
-        builder.Add($"* FROM {table.Name}");
-        builder.Add(root.WhereClause != null ? GetWhereClause(root.WhereClause) : "");
-        builder.Add(root.OrderByClause != null ? GetOrderByClause(root.OrderByClause) : "");
-        builder.Add(root.LimitClause != null ? GetLimitClause(root.LimitClause) : "");
-        builder.Add(root.OffsetClause != null ? GetOffsetClause(root.OffsetClause) : "");
+        var builder = new List<string?>
+        {
+            "SELECT",
+            root.DistinctClause != null ? GetDistinctClause(root.DistinctClause) : "",
+            $"* FROM {table.Name}",
+            root.WhereClause != null ? GetWhereClause(root.WhereClause) : "",
+            root.OrderByClause != null ? GetOrderByClause(root.OrderByClause) : "",
+            root.LimitClause != null ? GetLimitClause(root.LimitClause) : "",
+            root.OffsetClause != null ? GetOffsetClause(root.OffsetClause) : ""
+        };
 
         return $"{string.Join(" ", builder)};";
     }
 
-    public override string Update<T>(Table<T> table, Record<T> record, object pk)
+    // https://www.sqlitetutorial.net/sqlite-upsert/
+    public override string Upsert<T>(Table<T> table, Record<T> record, object pk)
     {
-        var builder = new List<string?>();
-        builder.Add($"UPDATE {table.Name}");
-        builder.Add(_converter.GetSetArray(table, record));
-        builder.Add("WHERE");
-        builder.Add($"{table.Schema.GetPrimaryKeyAttribute().Name} = {_converter.FormatValue(pk)}");
+        var builder = new List<string?>
+        {
+            $"INSERT INTO {table.Name}",
+            _converter.GetSchemaArray(table),
+            "VALUES",
+            _converter.GetValuesArray(table, record),
+
+            "ON CONFLICT",
+            $"({table.Schema.GetPrimaryKeyAttribute().Name})",
+            "DO UPDATE",
+            _converter.GetSetArray(table, record),
+            "WHERE",
+            $"{table.Schema.GetPrimaryKeyAttribute().Name} = {_converter.FormatValue(pk)}"
+        };
 
         return $"{string.Join(" ", builder)};";
     }
 
     public override string Delete<T>(Table<T> table, object pk)
     {
-        var builder = new List<string?>();
-        builder.Add($"DELETE FROM {table.Name}");
-        builder.Add("WHERE");
-        builder.Add($"{table.Schema.GetPrimaryKeyAttribute().Name} = {_converter.FormatValue(pk)}");
+        var builder = new List<string?>
+        {
+            $"DELETE FROM {table.Name}",
+            "WHERE",
+            $"{table.Schema.GetPrimaryKeyAttribute().Name} = {_converter.FormatValue(pk)}"
+        };
 
         return $"{string.Join(" ", builder)};";
     }
