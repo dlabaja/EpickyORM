@@ -1,5 +1,4 @@
 using System.Globalization;
-using EpickyORM.Core.Structures;
 using EpickyORM.Core.Structures.Backend;
 using static EpickyORM.Core.Utils.StringUtils;
 
@@ -40,7 +39,8 @@ public class SqliteTableConverter : TableConverter
     public override string ConvertTableAttribute(SchemaAttribute schemaAttribute)
     {
         var pkText = schemaAttribute.IsPk ? "PRIMARY KEY" : "";
-        return $"{schemaAttribute.Name.ToSnakeCase()} {ConvertType(Type.GetTypeCode(schemaAttribute.Type))} {pkText}".Trim();
+        return $"{schemaAttribute.Name.ToSnakeCase()} {ConvertType(Type.GetTypeCode(schemaAttribute.Type))} {pkText}"
+            .Trim();
     }
 
     public override string ConvertTable<T>(Table<T> table)
@@ -48,40 +48,44 @@ public class SqliteTableConverter : TableConverter
         return $"{table.Name} ({string.Join(", ", table.Schema.SchemaAttributes.Select(ConvertTableAttribute))})";
     }
 
-    public override string GetSchemaArray<T>(Table<T> table)
+    public override string GetSchemaArray<T>(Table<T> table, bool noPk)
     {
-        return $"({string.Join(", ", table.Schema.SchemaAttributes.Select(x => x.Name))})";
+        return $"({string.Join(", ", table.Schema.SchemaAttributes
+            .Where(x => noPk ? !x.IsPk : true)
+            .Select(x => x.Name))})";
     }
 
-    public override string GetValuesArray<T>(Table<T> table, Record<T> record, ParameterKeeper keeper)
+    public override string GetValuesArray<T>(Table<T> table, Record<T> record, ParameterKeeper keeper, bool noPk)
     {
-        return $"({string.Join(", ", table.GetRecordValues(record)
-            .Select(x => x.Item2 == null ? "" : keeper.GetParamName(x.Item2)))})";
-    }
-    
-    public override string GetMultipleValuesArray<T>(Table<T> table, List<Record<T>> records, ParameterKeeper keeper)
-    {
-        return $"{string.Join(", ", records.Select(x => GetValuesArray(table, x, keeper)))}";
+        return $"({string.Join(", ",
+            table.GetRecordValues(record)
+                .Where(x => noPk ? !x.x.IsPk : true)
+                .Select(x => x.Item2 == null ? "" : $"@{keeper.GetParamName(x.Item2)}"))})";
     }
 
-    public override string FormatValue(object obj)
+    public override string GetMultipleValuesArray<T>(Table<T> table, List<Record<T>> records, ParameterKeeper keeper, bool noPk)
+    {
+        return $"{string.Join(", ", records.Select(x => GetValuesArray(table, x, keeper, noPk)))}";
+    }
+
+    public override string FormatValue(object? obj)
     {
         return obj switch
         {
             string i => $"\"{i}\"",
             float i => i.ToString(provider: CultureInfo.InvariantCulture),
             double i => i.ToString(provider: CultureInfo.InvariantCulture),
-            _ => obj.ToString() ?? ""
+            _ => obj?.ToString() ?? "NULL"
         };
     }
 
-    public override string GetSetArray<T>(Table<T> table, Record<T> record)
+    public override string GetSetArray<T>(Table<T> table, Record<T> record, ParameterKeeper keeper)
     {
-        return $"SET {string.Join(", ", table.Schema.SchemaAttributes.Select(GetSetItem))}";
+        return $"SET {string.Join(", ", table.Schema.SchemaAttributes.Select(x => GetSetItem(x, table.GetValue(x, record), keeper)))}";
     }
 
-    public override string GetSetItem(SchemaAttribute attribute, int paramId)
+    public override string GetSetItem(SchemaAttribute attribute, object? value, ParameterKeeper keeper)
     {
-        return $"{attribute.Name} = @setp{paramId}";
+        return $"{attribute.Name} = @{keeper.GetParamName(value)}";
     }
 }

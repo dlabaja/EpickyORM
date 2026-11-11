@@ -34,7 +34,7 @@ public class SqliteDatabaseDriver : DatabaseDriver
                 {
                     cmd.Parameters.AddRange(keeper.Parameters
                         .Select(x =>
-                            new SqliteParameter(_generator.GetParameter(x.Name, keeper), _generator.GetValue(x.Value))));
+                            new SqliteParameter(_generator.GetParameter(x.Value, keeper), _generator.GetValue(x.Value))));
                 }
 
                 cmd.ExecuteNonQuery();
@@ -65,7 +65,7 @@ public class SqliteDatabaseDriver : DatabaseDriver
                 {
                     cmd.Parameters.AddRange(keeper.Parameters
                         .Select(x =>
-                            new SqliteParameter(_generator.GetParameter(x.Name, keeper), _generator.GetValue(x.Value))));
+                            new SqliteParameter(_generator.GetParameter(x.Value, keeper), _generator.GetValue(x.Value))));
                 }
 
                 result.Add(cmd.ExecuteScalar());
@@ -77,7 +77,7 @@ public class SqliteDatabaseDriver : DatabaseDriver
         catch (Exception e)
         {
             transaction.Rollback();
-            throw new Exception("Error in my ORM Execute, it's still Epicky though: " + e.Message);
+            throw new Exception("Error in my ORM ExecuteScalar, it's still Epicky though: " + e.Message);
         }
     }
 

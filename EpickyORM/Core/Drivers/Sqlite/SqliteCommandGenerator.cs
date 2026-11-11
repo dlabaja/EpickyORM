@@ -26,7 +26,7 @@ public class SqliteCommandGenerator : CommandGenerator
     public override string Insert<T>(Table<T> table, List<Record<T>> records, ParameterKeeper keeper)
     {
         return
-            $"INSERT INTO {table.Name} {_converter.GetSchemaArray(table)} VALUES {_converter.GetMultipleValuesArray(table, records, keeper)};";
+            $"INSERT INTO {table.Name} {_converter.GetSchemaArray(table, true)} VALUES {_converter.GetMultipleValuesArray(table, records, keeper, true)};";
     }
 
     public override string GetLastId()
@@ -57,14 +57,14 @@ public class SqliteCommandGenerator : CommandGenerator
         var builder = new List<string?>
         {
             $"INSERT INTO {table.Name}",
-            _converter.GetSchemaArray(table),
+            _converter.GetSchemaArray(table, false),
             "VALUES",
-            _converter.GetValuesArray(table, record, keeper),
+            _converter.GetValuesArray(table, record, keeper, false),
 
             "ON CONFLICT",
             $"({table.Schema.GetPrimaryKeyAttribute().Name})",
             "DO UPDATE",
-            _converter.GetSetArray(table, record),
+            _converter.GetSetArray(table, record, keeper),
             "WHERE",
             $"{table.Schema.GetPrimaryKeyAttribute().Name} = {_converter.FormatValue(pk)}"
         };
@@ -107,12 +107,12 @@ public class SqliteCommandGenerator : CommandGenerator
             $"({binaryCondition.Left.Parse(this)} {GetBinaryOperator(binaryCondition.BinaryOperator)} {binaryCondition.Right.Parse(this)})";
     }
 
-    public override string GetParameter(object value, ParameterKeeper keeper)
+    public override string GetParameter(object? value, ParameterKeeper keeper)
     {
         return $"@{keeper.GetParamName(value)}";
     }
     
-    public override string GetValue(object value)
+    public override string GetValue(object? value)
     {
         return _converter.FormatValue(value);
     }

@@ -12,7 +12,7 @@ class MyContext : DbContext
 
 public class OperationsTest
 {
-    private readonly string _path = "test.sqlite";
+    private string? _path;
     private DatabaseDriver driver;
     private Database<MyContext> db;
     
@@ -20,10 +20,22 @@ public class OperationsTest
     public void Setup()
     {
         // bez těch optionů mi to blokoval sql driver a nešlo nic přepsat
-        var file = File.Open(_path, FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
-        file.Write([]);
+        _path = $"test_{TestContext.CurrentContext.Test.ID}.sqlite";
+        if (!string.IsNullOrEmpty(_path))
+        {
+            File.Delete(_path);
+        }
         driver = new SqliteDatabaseDriver($"Data Source={_path}");
         db = new Database<MyContext>(driver);
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        if (!string.IsNullOrEmpty(_path))
+        {
+            File.Delete(_path);
+        }
     }
 
     private long GetCount(string tableName)

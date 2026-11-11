@@ -41,6 +41,6 @@ public class SqliteCommandGeneratorTest
         var record2 = new Record<Teacher>(obj2, RecordAction.ADD);
 
         Assert.That(_generator.Insert(table, [record1, record2], new ParameterKeeper()), Is.EqualTo(
-            """INSERT INTO Teacher (id, name, surname, titul) VALUES (@p1, @p2, @p3, @p4), (@p1, @p5, @p6, @p7);"""));
+            "INSERT INTO Teacher (name, surname, titul) VALUES (@p1, @p2, @p3), (@p4, @p5, @p6);"));
     }
 }

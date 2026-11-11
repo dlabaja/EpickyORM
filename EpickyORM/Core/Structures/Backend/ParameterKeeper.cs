@@ -6,17 +6,23 @@ public class ParameterKeeper
     // díky zápočtovýmu testu jsem se naučil správně používat increment
     public int GetNewId() => _currentId++;
 
-    private readonly Dictionary<object, string> _paramMapper = new();
+    private readonly Dictionary<string, (object? Value, string Name)> _paramMapper = new(); // value.ToString -> (value, paramName)
 
-    public string GetParamName(object value)
+    public string GetParamName(object? value)
     {
-        if (_paramMapper.TryGetValue(value, out var name))
+        if (value?.ToString() == null)
         {
-            return name;
+            return "pnull";
         }
-        _paramMapper.Add(value, $"p{GetNewId()}");
-        return _paramMapper[value];
+
+        var key = $"{value.GetType()}--{value}";
+        if (_paramMapper.TryGetValue(key, out var val))
+        {
+            return val.Name;
+        }
+        _paramMapper.Add(key, (value, $"p{GetNewId()}"));
+        return _paramMapper[key].Name;
     }
 
-    public List<(object Value, string Name)> Parameters => [.. _paramMapper.Keys.Zip(_paramMapper.Values)];
+    public List<(object? Value, string Name)> Parameters => [.. _paramMapper.Values, (null, "pnull")];
 }

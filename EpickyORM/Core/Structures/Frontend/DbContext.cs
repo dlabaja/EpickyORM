@@ -84,6 +84,7 @@ public abstract class DbContext
         }
     }
 
+    // btw v těhle dynamicky invokovaných metodách nefungují breakpointy, yay
     private void ProcessRecordsToAdd<T>(DatabaseDriver driver, Table<T> table, List<Record<T>> _records)
     {
         var records = _records.Where(x => x.RecordAction == RecordAction.ADD).ToList();
