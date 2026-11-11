@@ -1,3 +1,5 @@
+using EpickyORM.Core.Enums;
+
 namespace EpickyORM.Core.Structures.Backend;
 
 public interface ITable
@@ -8,9 +10,10 @@ public interface ITable
 // tahle třída je důvod proč mám radši TypeScript, striktní typy jsou strašně omezující, pomoc
 public class ChangeTracker
 {
-    private Dictionary<Type, object> _tables = new();
+    public Dictionary<Type, dynamic> _tables = new();
 
-    public List<object> Tables => [.. _tables.Values];
+    public List<dynamic> Tables => [.. _tables.Values];
+    public List<Type> Types => [.. _tables.Values];
 
     public void RegisterTable(object table)
     {
@@ -19,7 +22,7 @@ public class ChangeTracker
     
     public void Add<T>(Record<T> record)
     {
-        if (!_tables.ContainsKey(record.GetType()))
+        if (!_tables.ContainsKey(typeof(T)))
         {
             throw new Exception($"There is no table for record of type {record.GetType()}");
         }
@@ -29,6 +32,11 @@ public class ChangeTracker
     public Table<T> GetTable<T>()
     {
         return (Table<T>)_tables[typeof(T)];
+    }
+
+    public List<Record<T>> GetRecords<T>(RecordAction action)
+    {
+        return GetTable<T>().GetRecords().Where(x => x.RecordAction == action).ToList();
     }
 
     public void Flush()

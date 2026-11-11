@@ -81,15 +81,15 @@ public abstract class DbContext
 
         foreach (var table in _changeTracker.Tables)
         {
-            var t = (table.GetType())table;
-            Driver.TryCreateTable(t);
+            Driver.TryCreateTable(table);
         }
 
         _triedCreatingTables = true;
     }
 
-    private void ProcessRecordsToAdd<T>(DatabaseDriver driver, Table<T> table, List<Record<T>> records)
+    private void ProcessRecordsToAdd<T>(DatabaseDriver driver, Table<T> table, List<Record<T>> _records)
     {
+        var records = _records.Where(x => x.RecordAction == RecordAction.ADD).ToList();
         if (records.Count == 0)
         {
             return;
@@ -103,8 +103,9 @@ public abstract class DbContext
         }
     }
 
-    private void ProcessRecordsToUpdate<T>(DatabaseDriver driver, Table<T> table, List<Record<T>> records)
+    private void ProcessRecordsToUpdate<T>(DatabaseDriver driver, Table<T> table, List<Record<T>> _records)
     {
+        var records = _records.Where(x => x.RecordAction == RecordAction.ADD).ToList();
         if (records.Count == 0)
         {
             return;
@@ -112,8 +113,9 @@ public abstract class DbContext
         driver.Update(table, records);
     }
 
-    private void ProcessRecordsToRemove<T>(DatabaseDriver driver, Table<T> table, List<Record<T>> records)
+    private void ProcessRecordsToRemove<T>(DatabaseDriver driver, Table<T> table, List<Record<T>> _records)
     {
+        var records = _records.Where(x => x.RecordAction == RecordAction.ADD).ToList();
         if (records.Count == 0)
         {
             return;
@@ -121,16 +123,14 @@ public abstract class DbContext
         driver.Delete(table, records);
     }
 
+    // nevím jak se mi to povedlo, ale po asi hodině jsem znásilnil C# natolik že mi dovolil mít dynamický Tabulky v ChangeTrackeru
     public void SaveChanges()
     {
         foreach (var table in _changeTracker.Tables)
         {
-            ProcessRecordsToAdd(Driver, table,
-                [.. table.GetRecords().Where(x => x.RecordAction == RecordAction.ADD)]);
-            ProcessRecordsToUpdate(Driver, table,
-                [.. table.GetRecords().Where(x => x.RecordAction == RecordAction.UPDATE)]);
-            ProcessRecordsToRemove(Driver, table,
-                [.. table.GetRecords().Where(x => x.RecordAction == RecordAction.REMOVE)]);
+            ProcessRecordsToAdd(Driver, table, table.GetRecords());
+            ProcessRecordsToUpdate(Driver, table, table.GetRecords());
+            ProcessRecordsToRemove(Driver, table, table.GetRecords());
         }
 
         _changeTracker.Flush();
