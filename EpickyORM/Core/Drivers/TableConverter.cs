@@ -13,9 +13,9 @@ public abstract class TableConverter
 
     public abstract string GetSchemaArray<T>(Table<T> table);
 
-    public abstract string GetValuesArray<T>(Table<T> table, Record<T> record);
+    public abstract string GetValuesArray<T>(Table<T> table, Record<T> record, ParameterKeeper keeper);
 
-    public abstract string GetMultipleValuesArray<T>(Table<T> table, List<Record<T>> records);
+    public abstract string GetMultipleValuesArray<T>(Table<T> table, List<Record<T>> records, ParameterKeeper keeper);
 
     public abstract string FormatValue(Object obj);
 

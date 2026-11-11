@@ -5,11 +5,18 @@ public class ParameterKeeper
     private int _currentId = 1;
     // díky zápočtovýmu testu jsem se naučil správně používat increment
     public int GetNewId() => _currentId++;
-    
-    public void Add(string name, object? value)
+
+    private readonly Dictionary<object, string> _paramMapper = new();
+
+    public string GetParamName(object value)
     {
-        Parameters.Add((name, value));
+        if (_paramMapper.TryGetValue(value, out var name))
+        {
+            return name;
+        }
+        _paramMapper.Add(value, $"p{GetNewId()}");
+        return _paramMapper[value];
     }
 
-    public List<(string Name, object Value)> Parameters { get; } = [];
+    public List<(object Value, string Name)> Parameters => [.. _paramMapper.Keys.Zip(_paramMapper.Values)];
 }

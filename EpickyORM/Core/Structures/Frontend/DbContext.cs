@@ -8,7 +8,6 @@ namespace EpickyORM.Core.Structures.Frontend;
 public abstract class DbContext
 {
     private readonly ChangeTracker _changeTracker;
-    private bool _triedCreatingTables;
 
     // poprvé používám internal, díky tomu můžu Driver nastavit z databáze ale nikdo mimo namespace se k němu nedostane
     internal DatabaseDriver Driver { get; private set; }
@@ -74,17 +73,15 @@ public abstract class DbContext
 
     private void TryCreatingTables()
     {
-        if (_triedCreatingTables)
-        {
-            return;
-        }
-
         foreach (var table in _changeTracker.Tables)
         {
-            Driver.TryCreateTable(table);
+            // musím používat reflexi, z těch typů zešílím
+            var entityType = table.GetType().GetGenericArguments()[0];
+            typeof(DatabaseDriver)
+                .GetMethod(nameof(DatabaseDriver.TryCreateTable))!
+                .MakeGenericMethod(entityType)
+                .Invoke(Driver, new object[] { table });
         }
-
-        _triedCreatingTables = true;
     }
 
     private void ProcessRecordsToAdd<T>(DatabaseDriver driver, Table<T> table, List<Record<T>> _records)
@@ -105,7 +102,7 @@ public abstract class DbContext
 
     private void ProcessRecordsToUpdate<T>(DatabaseDriver driver, Table<T> table, List<Record<T>> _records)
     {
-        var records = _records.Where(x => x.RecordAction == RecordAction.ADD).ToList();
+        var records = _records.Where(x => x.RecordAction == RecordAction.UPDATE).ToList();
         if (records.Count == 0)
         {
             return;
@@ -115,7 +112,7 @@ public abstract class DbContext
 
     private void ProcessRecordsToRemove<T>(DatabaseDriver driver, Table<T> table, List<Record<T>> _records)
     {
-        var records = _records.Where(x => x.RecordAction == RecordAction.ADD).ToList();
+        var records = _records.Where(x => x.RecordAction == RecordAction.REMOVE).ToList();
         if (records.Count == 0)
         {
             return;
@@ -128,11 +125,26 @@ public abstract class DbContext
     {
         foreach (var table in _changeTracker.Tables)
         {
-            ProcessRecordsToAdd(Driver, table, table.GetRecords());
-            ProcessRecordsToUpdate(Driver, table, table.GetRecords());
-            ProcessRecordsToRemove(Driver, table, table.GetRecords());
+            // další znásilnění type systému, čekám soud v Haagu
+            var tableType = table.GetType();
+            var entityType = tableType.GetGenericArguments()[0];
+            var getRecordsMethod = tableType.GetMethod("GetRecords")!;
+            var records = getRecordsMethod.Invoke(table, null);
+
+            InvokeProcessMethod(nameof(ProcessRecordsToAdd), entityType, table, records);
+            InvokeProcessMethod(nameof(ProcessRecordsToUpdate), entityType, table, records);
+            InvokeProcessMethod(nameof(ProcessRecordsToRemove), entityType, table, records);
         }
 
         _changeTracker.Flush();
+    }
+
+    private void InvokeProcessMethod(string methodName, Type entityType, object table, object records)
+    {
+        var method = typeof(DbContext)
+            .GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance)?
+            .MakeGenericMethod(entityType);
+
+        method?.Invoke(this, [Driver, table, records]);
     }
 }

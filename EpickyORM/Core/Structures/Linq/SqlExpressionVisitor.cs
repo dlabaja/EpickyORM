@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using EpickyORM.Core.Drivers;
 using EpickyORM.Core.Enums;
 using EpickyORM.Core.Structures.Backend;
 using EpickyORM.Core.Structures.Linq.QueryModel;
@@ -36,11 +35,11 @@ public class SqlExpressionVisitor<T> : ExpressionVisitor
                     new QueryWhereClause((QueryBinaryCondition)ParseExpression(content)); // Where(objects, x => ...)
                 break;
             case "Take":
-                _root.LimitClause = new QueryLimitClause((QueryParameter)ParseExpression(content)); // Take(objects, n)
+                _root.LimitClause = new QueryLimitClause((QueryParameter)ParseExpression(content), _root.Keeper); // Take(objects, n)
                 break;
             case "Skip":
                 _root.OffsetClause =
-                    new QueryOffsetClause((QueryParameter)ParseExpression(content)); // Skip(objects, n)
+                    new QueryOffsetClause((QueryParameter)ParseExpression(content), _root.Keeper); // Skip(objects, n)
                 break;
             case "Distinct": // Select vždy vrací celý řádek, takže Distinct vlastně nedělá nic (jen brzdí databázi)
                 _root.DistinctClause = new QueryDistinctClause(); // Distinct(objects)
@@ -79,8 +78,7 @@ public class SqlExpressionVisitor<T> : ExpressionVisitor
     
     private QueryParameter ConstantExpr(ConstantExpression param)
     {
-        var res = new QueryParameter(param.Value, _root.Keeper.GetNewId());
-        _root.Keeper.Add(res.Name, param.Value);
+        var res = new QueryParameter(param.Value, _root.Keeper);
         return res;
     }
 }

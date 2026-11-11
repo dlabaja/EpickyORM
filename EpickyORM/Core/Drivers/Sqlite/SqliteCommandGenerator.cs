@@ -23,10 +23,10 @@ public class SqliteCommandGenerator : CommandGenerator
         return $"DROP TABLE {table.Name};";
     }
 
-    public override string Insert<T>(Table<T> table, List<Record<T>> records)
+    public override string Insert<T>(Table<T> table, List<Record<T>> records, ParameterKeeper keeper)
     {
         return
-            $"INSERT INTO {table.Name} {_converter.GetSchemaArray(table)} VALUES {_converter.GetMultipleValuesArray(table, records)};";
+            $"INSERT INTO {table.Name} {_converter.GetSchemaArray(table)} VALUES {_converter.GetMultipleValuesArray(table, records, keeper)};";
     }
 
     public override string GetLastId()
@@ -44,22 +44,22 @@ public class SqliteCommandGenerator : CommandGenerator
             $"* FROM {table.Name}",
             root.WhereClause != null ? GetWhereClause(root.WhereClause) : "",
             root.OrderByClause != null ? GetOrderByClause(root.OrderByClause) : "",
-            root.LimitClause != null ? GetLimitClause(root.LimitClause) : "",
-            root.OffsetClause != null ? GetOffsetClause(root.OffsetClause) : ""
+            root.LimitClause != null ? GetLimitClause(root.LimitClause, root.Keeper) : "",
+            root.OffsetClause != null ? GetOffsetClause(root.OffsetClause, root.Keeper) : ""
         };
 
         return $"{string.Join(" ", builder)};";
     }
 
     // https://www.sqlitetutorial.net/sqlite-upsert/
-    public override string Upsert<T>(Table<T> table, Record<T> record, object pk)
+    public override string Upsert<T>(Table<T> table, Record<T> record, object pk, ParameterKeeper keeper)
     {
         var builder = new List<string?>
         {
             $"INSERT INTO {table.Name}",
             _converter.GetSchemaArray(table),
             "VALUES",
-            _converter.GetValuesArray(table, record),
+            _converter.GetValuesArray(table, record, keeper),
 
             "ON CONFLICT",
             $"({table.Schema.GetPrimaryKeyAttribute().Name})",
@@ -107,14 +107,9 @@ public class SqliteCommandGenerator : CommandGenerator
             $"({binaryCondition.Left.Parse(this)} {GetBinaryOperator(binaryCondition.BinaryOperator)} {binaryCondition.Right.Parse(this)})";
     }
 
-    public override string GetParameter(string name)
+    public override string GetParameter(object value, ParameterKeeper keeper)
     {
-        return $"@{name}";
-    }
-    
-    public override string GetParameter(QueryParameter param)
-    {
-        return $"@{param}";
+        return $"@{keeper.GetParamName(value)}";
     }
     
     public override string GetValue(object value)
@@ -138,14 +133,14 @@ public class SqliteCommandGenerator : CommandGenerator
         return "DISTINCT";
     }
 
-    public override string GetLimitClause(QueryLimitClause limitClause)
+    public override string GetLimitClause(QueryLimitClause limitClause, ParameterKeeper keeper)
     {
-        return $"LIMIT {GetParameter(limitClause.Limit)}";
+        return $"LIMIT {GetParameter(limitClause.Limit, keeper)}";
     }
 
-    public override string GetOffsetClause(QueryOffsetClause offsetClause)
+    public override string GetOffsetClause(QueryOffsetClause offsetClause, ParameterKeeper keeper)
     {
-        return $"OFFSET {GetParameter(offsetClause.OffsetCount)}";
+        return $"OFFSET {GetParameter(offsetClause.OffsetCount, keeper)}";
     }
 
     public override string GetAttributeName(QueryAttributeName attributeName)

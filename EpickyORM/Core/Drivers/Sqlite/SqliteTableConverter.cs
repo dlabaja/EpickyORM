@@ -53,15 +53,15 @@ public class SqliteTableConverter : TableConverter
         return $"({string.Join(", ", table.Schema.SchemaAttributes.Select(x => x.Name))})";
     }
 
-    public override string GetValuesArray<T>(Table<T> table, Record<T> record)
+    public override string GetValuesArray<T>(Table<T> table, Record<T> record, ParameterKeeper keeper)
     {
         return $"({string.Join(", ", table.GetRecordValues(record)
-            .Select(x => x.Item2 == null ? "" : FormatValue(x.Item2)))})";
+            .Select(x => x.Item2 == null ? "" : keeper.GetParamName(x.Item2)))})";
     }
     
-    public override string GetMultipleValuesArray<T>(Table<T> table, List<Record<T>> records)
+    public override string GetMultipleValuesArray<T>(Table<T> table, List<Record<T>> records, ParameterKeeper keeper)
     {
-        return $"{string.Join(", ", records.Select(x => GetValuesArray(table, x)))}";
+        return $"{string.Join(", ", records.Select(x => GetValuesArray(table, x, keeper)))}";
     }
 
     public override string FormatValue(object obj)

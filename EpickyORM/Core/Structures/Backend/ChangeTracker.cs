@@ -2,29 +2,23 @@ using EpickyORM.Core.Enums;
 
 namespace EpickyORM.Core.Structures.Backend;
 
-public interface ITable
-{
-    void Flush();
-}
-
 // tahle třída je důvod proč mám radši TypeScript, striktní typy jsou strašně omezující, pomoc
 public class ChangeTracker
 {
-    public Dictionary<Type, dynamic> _tables = new();
+    private Dictionary<Type, dynamic> _tables = new();
 
     public List<dynamic> Tables => [.. _tables.Values];
-    public List<Type> Types => [.. _tables.Values];
 
     public void RegisterTable(object table)
     {
-        _tables.Add(table.GetType(), table);
+        _tables.Add(table.GetType().GenericTypeArguments[0], table);
     }
     
     public void Add<T>(Record<T> record)
     {
-        if (!_tables.ContainsKey(typeof(T)))
+        if (!_tables.Values.Select(x => x.GetType().GenericTypeArguments[0]).Contains(typeof(T)))
         {
-            throw new Exception($"There is no table for record of type {record.GetType()}");
+            throw new Exception($"There is no table for record of type {typeof(T)}");
         }
         GetTable<T>().Add(record);
     }
@@ -41,11 +35,11 @@ public class ChangeTracker
 
     public void Flush()
     {
-        foreach (var table in _tables.Values)
+        foreach (var table in Tables)
         {
-            // fake rozhraní
-            var t = (ITable)table;
-            t.Flush();   
+            var tableType = table.GetType();
+            var method = tableType.GetMethod("Flush")!;
+            method.Invoke(table, null);
         }
     }
 }

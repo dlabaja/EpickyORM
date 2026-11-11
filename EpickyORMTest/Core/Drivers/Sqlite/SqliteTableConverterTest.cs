@@ -60,8 +60,8 @@ public class SqliteTableConverterTest
         var table = new Table<Teacher>();
         var obj = new Teacher { Name = "Jan", Surname = "Novák", Titul = "doc" };
         var record = new Record<Teacher>(obj, RecordAction.ADD);
-        Assert.That(_converter.GetValuesArray(table, record) ==
-                    """(0, "Jan", "Novák", "doc")""");
+        Assert.That(_converter.GetValuesArray(table, record, new ParameterKeeper()) ==
+                    "(@p1, @p2, @p3, @p4)");
     }
     
     [Test]
@@ -72,8 +72,8 @@ public class SqliteTableConverterTest
         var obj2 = new Teacher { Name = "Jana", Surname = "Nováková", Titul = "prof" };
         var record1 = new Record<Teacher>(obj1, RecordAction.ADD);
         var record2 = new Record<Teacher>(obj2, RecordAction.ADD);
-        Assert.That(_converter.GetMultipleValuesArray(table, [record1, record2]) ==
-                    """(0, "Jan", "Novák", "doc"), (0, "Jana", "Nováková", "prof")""");
+        Assert.That(_converter.GetMultipleValuesArray(table, [record1, record2], new ParameterKeeper()) ==
+                    """ (@p1, @p2, @p3, @p4), (@p1, @p5, @p6, @p7)""");
     }
     
     [Test]

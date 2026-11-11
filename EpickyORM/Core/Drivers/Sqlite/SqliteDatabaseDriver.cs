@@ -34,7 +34,7 @@ public class SqliteDatabaseDriver : DatabaseDriver
                 {
                     cmd.Parameters.AddRange(keeper.Parameters
                         .Select(x =>
-                            new SqliteParameter(_generator.GetParameter(x.Name), _generator.GetValue(x.Value))));
+                            new SqliteParameter(_generator.GetParameter(x.Name, keeper), _generator.GetValue(x.Value))));
                 }
 
                 cmd.ExecuteNonQuery();
@@ -65,10 +65,10 @@ public class SqliteDatabaseDriver : DatabaseDriver
                 {
                     cmd.Parameters.AddRange(keeper.Parameters
                         .Select(x =>
-                            new SqliteParameter(_generator.GetParameter(x.Name), _generator.GetValue(x.Value))));
+                            new SqliteParameter(_generator.GetParameter(x.Name, keeper), _generator.GetValue(x.Value))));
                 }
 
-                result.Add(cmd.ExecuteNonQuery());
+                result.Add(cmd.ExecuteScalar());
             }
 
             transaction.Commit();
@@ -94,7 +94,7 @@ public class SqliteDatabaseDriver : DatabaseDriver
     public override void Insert<T>(Table<T> table, List<Record<T>> records, ParameterKeeper keeper, out int lastNewId)
     {
         lastNewId = 0;
-        var objects = ExecuteScalar([_generator.Insert(table, records), _generator.GetLastId()], keeper);
+        var objects = ExecuteScalar([_generator.Insert(table, records, keeper), _generator.GetLastId()], keeper);
         TryParse(objects.Last()?.ToString(), out lastNewId);
     }
 
@@ -118,7 +118,7 @@ public class SqliteDatabaseDriver : DatabaseDriver
     public override void Upsert<T>(Table<T> table, List<Record<T>> records, ParameterKeeper keeper)
     {
         Execute([
-            .. records.Select(x => _generator.Upsert(table, x, table.GetRecordPk(x)))
+            .. records.Select(x => _generator.Upsert(table, x, table.GetRecordPk(x), keeper))
         ], keeper);
     }
 
