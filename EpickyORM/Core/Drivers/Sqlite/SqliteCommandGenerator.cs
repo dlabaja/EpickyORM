@@ -107,9 +107,19 @@ public class SqliteCommandGenerator : CommandGenerator
             $"({binaryCondition.Left.Parse(this)} {GetBinaryOperator(binaryCondition.BinaryOperator)} {binaryCondition.Right.Parse(this)})";
     }
 
-    public override string GetParameter(QueryParameter parameter)
+    public override string GetParameter(string name)
     {
-        return $"@p{parameter.Id}";
+        return $"@{name}";
+    }
+    
+    public override string GetParameter(QueryParameter param)
+    {
+        return $"@{param}";
+    }
+    
+    public override string GetValue(object value)
+    {
+        return _converter.FormatValue(value);
     }
 
     public override string GetWhereClause(QueryWhereClause whereClause)

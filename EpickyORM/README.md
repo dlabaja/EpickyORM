@@ -7,4 +7,4 @@ Funguje s SQLite (./database.sqlite), ale ORM je driver-independant a pro jiné 
 
 Podporuje základní LINQ (Where, Distinct, Limit, Skip, OrderBy), další jdou celkem jednoduše přidat
 
-*Vždy vrací celý řádek (\*), takže Distinct vlastně nedělá nic protože všechny řádky jsou díky Pk unikátní*
+Select vždy vrací celý řádek (\*), takže Distinct vlastně nedělá nic protože všechny řádky jsou díky Pk unikátní*

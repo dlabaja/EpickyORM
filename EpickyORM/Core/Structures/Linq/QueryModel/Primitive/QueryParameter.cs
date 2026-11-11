@@ -6,6 +6,7 @@ public class QueryParameter : QueryExpression
 {
     public object? Value { get; }
     public int Id { get; }
+    public string Name => $"p{Id}";
     
     public QueryParameter(object? value, int id)
     {

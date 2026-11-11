@@ -12,7 +12,6 @@ namespace EpickyORM.Core.Structures.Linq;
 // hodně mi pomohl tenhle blog: https://jordansrowles.medium.com/building-a-custom-linq-provider-in-net-a987dc983381
 public class SqlExpressionVisitor<T> : ExpressionVisitor
 {
-    private int _currentParamId;
     private readonly QueryRoot<T> _root;
 
     public SqlExpressionVisitor(Table<T> table)
@@ -40,16 +39,19 @@ public class SqlExpressionVisitor<T> : ExpressionVisitor
                 _root.LimitClause = new QueryLimitClause((QueryParameter)ParseExpression(content)); // Take(objects, n)
                 break;
             case "Skip":
-                _root.OffsetClause = new QueryOffsetClause((QueryParameter)ParseExpression(content)); // Skip(objects, n)
+                _root.OffsetClause =
+                    new QueryOffsetClause((QueryParameter)ParseExpression(content)); // Skip(objects, n)
                 break;
             case "Distinct": // Select vždy vrací celý řádek, takže Distinct vlastně nedělá nic (jen brzdí databázi)
                 _root.DistinctClause = new QueryDistinctClause(); // Distinct(objects)
                 break;
             case "OrderBy":
-                _root.OrderByClause = new QueryOrderByClause((QueryAttributeNames)ParseExpression(content), OrderByDirection.ASCENDING);
+                _root.OrderByClause = new QueryOrderByClause((QueryAttributeNames)ParseExpression(content),
+                    OrderByDirection.ASCENDING);
                 break;
             case "OrderByDescending":
-                _root.OrderByClause = new QueryOrderByClause((QueryAttributeNames)ParseExpression(content), OrderByDirection.DESCENDING);
+                _root.OrderByClause = new QueryOrderByClause((QueryAttributeNames)ParseExpression(content),
+                    OrderByDirection.DESCENDING);
                 break;
             default:
                 throw new Exception($"I don't know how to convert {node.Method.Name} to SQL ;(");
@@ -70,9 +72,15 @@ public class SqlExpressionVisitor<T> : ExpressionVisitor
             LambdaExpression lambda => ParseExpression(lambda.Body), // (e => e.Arg) -> e.Arg
             NewExpression nexp => new QueryAttributeNames(nexp.Arguments
                 .Select(x => (QueryAttributeName)ParseExpression(x)).ToList()), // (x.Atr1, x.Atr2) -> Atr1, Atr2
-            ConstantExpression param => new QueryParameter(param.Value,
-                _currentParamId++), // díky zápočtovýmu testu jsem se naučil správně používat increment
+            ConstantExpression param => ConstantExpr(param), 
             _ => throw new Exception("Unsupported expression")
         };
+    }
+    
+    private QueryParameter ConstantExpr(ConstantExpression param)
+    {
+        var res = new QueryParameter(param.Value, _root.Keeper.GetNewId());
+        _root.Keeper.Add(res.Name, param.Value);
+        return res;
     }
 }

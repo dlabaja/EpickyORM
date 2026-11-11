@@ -28,7 +28,11 @@ public abstract class CommandGenerator
     
     public abstract string GetBinaryCondition(QueryBinaryCondition binaryCondition);
 
-    public abstract string GetParameter(QueryParameter parameter);
+    public abstract string GetParameter(string name);
+    
+    public abstract string GetParameter(QueryParameter param);
+    
+    public abstract string GetValue(object value);
     
     public abstract string GetWhereClause(QueryWhereClause whereClause);
     

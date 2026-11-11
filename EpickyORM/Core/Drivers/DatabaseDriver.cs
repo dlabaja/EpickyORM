@@ -16,20 +16,20 @@ public abstract class DatabaseDriver
     }
 
     // je to public hlavně kvůli testům, ale i tak se to může někdy hodit
-    public abstract void Execute(string[] commands);
+    public abstract void Execute(string[] commands, ParameterKeeper? keeper = null);
 
-    public abstract List<object?> ExecuteScalar(string[] commands);
+    public abstract List<object?> ExecuteScalar(string[] commands, ParameterKeeper? keeper = null);
     
     public abstract void TryCreateTable<T>(Table<T> table);
     
     public abstract void DropTable<T>(Table<T> table);
 
-    public abstract void Insert<T>(Table<T> table, List<Record<T>> records, out int newId);
+    public abstract void Insert<T>(Table<T> table, List<Record<T>> records, ParameterKeeper keeper, out int newId);
 
     public abstract List<Record<T>> Select<T>(Table<T> table, QueryRoot<T> root);
 
     // pokud někdo vytvoří entitu a upraví si sám PK, pak by update zhučel protože by takové PK neexistovalo. UPSERT to jistí 
-    public abstract void Upsert<T>(Table<T> table, List<Record<T>> records);
+    public abstract void Upsert<T>(Table<T> table, List<Record<T>> records, ParameterKeeper keeper);
 
-    public abstract void Delete<T>(Table<T> table, List<Record<T>> records);
+    public abstract void Delete<T>(Table<T> table, List<Record<T>> records, ParameterKeeper keeper);
 }

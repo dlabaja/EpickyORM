@@ -19,7 +19,7 @@ public class SqliteDatabaseDriver : DatabaseDriver
     // https://www.sqlitetutorial.net/sqlite-csharp/create-tables/
     // connection by se měl automaticky poolovat, takže můžu udělat jeden na každej příkaz
     // transakce kromě možnosti rollbacku umožňuje nešahat kvůli každému příkazu na disk
-    public override void Execute(string[] commands)
+    public override void Execute(string[] commands, ParameterKeeper? keeper = null)
     {
         using var connection = new SqliteConnection(ConnectionString);
         connection.Open();
@@ -30,6 +30,13 @@ public class SqliteDatabaseDriver : DatabaseDriver
             foreach (var command in commands)
             {
                 using var cmd = new SqliteCommand(command, connection, transaction);
+                if (keeper != null && keeper.Parameters.Count > 0)
+                {
+                    cmd.Parameters.AddRange(keeper.Parameters
+                        .Select(x =>
+                            new SqliteParameter(_generator.GetParameter(x.Name), _generator.GetValue(x.Value))));
+                }
+
                 cmd.ExecuteNonQuery();
             }
 
@@ -42,7 +49,7 @@ public class SqliteDatabaseDriver : DatabaseDriver
         }
     }
 
-    public override List<object?> ExecuteScalar(string[] commands)
+    public override List<object?> ExecuteScalar(string[] commands, ParameterKeeper? keeper = null)
     {
         using var connection = new SqliteConnection(ConnectionString);
         connection.Open();
@@ -50,8 +57,20 @@ public class SqliteDatabaseDriver : DatabaseDriver
         using var transaction = connection.BeginTransaction();
         try
         {
-            var result = commands.Select(command => new SqliteCommand(command, connection, transaction).ExecuteScalar())
-                .ToList();
+            var result = new List<object?>();
+            foreach (var command in commands)
+            {
+                using var cmd = new SqliteCommand(command, connection, transaction);
+                if (keeper != null && keeper.Parameters.Count > 0)
+                {
+                    cmd.Parameters.AddRange(keeper.Parameters
+                        .Select(x =>
+                            new SqliteParameter(_generator.GetParameter(x.Name), _generator.GetValue(x.Value))));
+                }
+
+                result.Add(cmd.ExecuteNonQuery());
+            }
+
             transaction.Commit();
             return result;
         }
@@ -72,17 +91,17 @@ public class SqliteDatabaseDriver : DatabaseDriver
         Execute([_generator.DropTable(table)]);
     }
 
-    public override void Insert<T>(Table<T> table, List<Record<T>> records, out int lastNewId)
+    public override void Insert<T>(Table<T> table, List<Record<T>> records, ParameterKeeper keeper, out int lastNewId)
     {
         lastNewId = 0;
-        var objects = ExecuteScalar([_generator.Insert(table, records), _generator.GetLastId()]);
+        var objects = ExecuteScalar([_generator.Insert(table, records), _generator.GetLastId()], keeper);
         TryParse(objects.Last()?.ToString(), out lastNewId);
     }
 
     public override List<Record<T>> Select<T>(Table<T> table, QueryRoot<T> root)
     {
         var result = new List<Record<T>>();
-        var objects = ExecuteScalar([_generator.Select(table, root)]);
+        var objects = ExecuteScalar([_generator.Select(table, root)], root.Keeper);
         foreach (var obj in objects)
         {
             if (obj == null)
@@ -96,17 +115,17 @@ public class SqliteDatabaseDriver : DatabaseDriver
         return result;
     }
 
-    public override void Upsert<T>(Table<T> table, List<Record<T>> records)
+    public override void Upsert<T>(Table<T> table, List<Record<T>> records, ParameterKeeper keeper)
     {
         Execute([
             .. records.Select(x => _generator.Upsert(table, x, table.GetRecordPk(x)))
-        ]);
+        ], keeper);
     }
 
-    public override void Delete<T>(Table<T> table, List<Record<T>> records)
+    public override void Delete<T>(Table<T> table, List<Record<T>> records, ParameterKeeper keeper)
     {
         Execute([
             .. records.Select(x => _generator.Delete(table, table.GetRecordPk(x)))
-        ]);
+        ], keeper);
     }
 }

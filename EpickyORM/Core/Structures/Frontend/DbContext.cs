@@ -94,7 +94,7 @@ public abstract class DbContext
         {
             return;
         }
-        driver.Insert(table, records, out var lastNewId);
+        driver.Insert(table, records, new ParameterKeeper(), out var lastNewId);
         var startId = lastNewId - (records.Count - 1);
         foreach (var record in records)
         {
@@ -110,7 +110,7 @@ public abstract class DbContext
         {
             return;
         }
-        driver.Upsert(table, records);
+        driver.Upsert(table, records, new ParameterKeeper());
     }
 
     private void ProcessRecordsToRemove<T>(DatabaseDriver driver, Table<T> table, List<Record<T>> _records)
@@ -120,7 +120,7 @@ public abstract class DbContext
         {
             return;
         }
-        driver.Delete(table, records);
+        driver.Delete(table, records, new ParameterKeeper());
     }
 
     // nevím jak se mi to povedlo, ale po asi hodině jsem znásilnil C# natolik že mi dovolil mít dynamický tabulky v ChangeTrackeru
