@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Reflection;
 using EpickyORM.Core.Attributes;
 using EpickyORM.Core.Utils;
@@ -44,8 +43,7 @@ public class Table<T>
             var attribute = new SchemaAttribute(
                 property.Name.ToSnakeCase(),
                 property.PropertyType,
-                property.Name == primaryKey.Name,
-                isFk ? GetClassPk(property.PropertyType).PropertyType : null // snad se nestane že někdo udělá Pk jako objekt, ale to se mi fakt nechce řešit
+                property.Name == primaryKey.Name// snad se nestane že někdo udělá Pk jako objekt, ale to se mi fakt nechce řešit
             );
             schemaAttributes.Add(attribute);
             _getters.Add(attribute, obj => property.GetValue(obj));
@@ -54,12 +52,10 @@ public class Table<T>
 
         foreach (var field in fields)
         {
-            var isFk = relations.Contains(field.FieldType);
             var attribute = new SchemaAttribute(
                 field.Name.ToSnakeCase(),
                 field.FieldType,
-                false,
-                isFk ? GetClassPk(field.FieldType).PropertyType : null); // nikdy nemůže být Pk, ten atribut na to ani nejde přidat
+                false); // nikdy nemůže být Pk, ten atribut na to ani nejde přidat
             schemaAttributes.Add(attribute);
             _getters.Add(attribute, obj => field.GetValue(obj));
             _setters.Add(attribute, (obj, val) => field.SetValue(obj, val));
@@ -81,13 +77,7 @@ public class Table<T>
 
     public object? GetValue(SchemaAttribute schemaAttribute, Record<T> record)
     {
-        var value = _getters[schemaAttribute].Invoke(record.Instance);
-        if (schemaAttribute.FkType != null)
-        {
-            return GetClassPk(schemaAttribute.Type).GetValue(value);
-        }
-
-        return value;
+        return _getters[schemaAttribute].Invoke(record.Instance);
     }
 
     public void SetValue(SchemaAttribute schemaAttribute, object instance, object value)

@@ -104,10 +104,10 @@ public class SqliteDatabaseDriver : DatabaseDriver
 
                 var reader = cmd.ExecuteReader();
                 var pks = table.GetPks();
+                var pk = table.Schema.GetPrimaryKeyAttribute();
                 while (reader.Read())
                 {
                     var instance = Activator.CreateInstance<T>();
-                    var pk = table.Schema.GetPrimaryKeyAttribute();
                     var isDuplicate = false;
                     for (var i = 0; i < reader.FieldCount; i++)
                     {
