@@ -5,7 +5,8 @@ namespace EpickyORM.Core.Structures.Linq;
 
 // https://jordansrowles.medium.com/building-a-custom-linq-provider-in-net-a987dc983381
 // třída kterou vrací každý LINQ příkaz
-public class SqlQueryable<T> : IQueryable<T>
+// musí to být Ordered, jinak by nefungovalo OrderBy
+public class SqlQueryable<T> : IOrderedQueryable<T>
 {
     // proč tohle nemá modifikátor přístupu?
     // public -> při manipulaci s ORM by uživatel viděl Expression, Provider a ElementType

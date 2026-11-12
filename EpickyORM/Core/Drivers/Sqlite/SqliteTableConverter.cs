@@ -59,7 +59,7 @@ public class SqliteTableConverter : TableConverter
         return $"({string.Join(", ",
             table.GetRecordValues(record)
                 .Where(x => noPk ? !x.x.IsPk : true)
-                .Select(x => x.Item2 == null ? "" : $"@{keeper.GetParamName(x.Item2)}"))})";
+                .Select(x => x.Item2 == null ? $"@{keeper.NullName}" : $"@{keeper.GetParamName(x.Item2)}"))})";
     }
 
     public override string GetMultipleValuesArray<T>(Table<T> table, List<Record<T>> records, ParameterKeeper keeper, bool noPk)

@@ -52,12 +52,10 @@ public class SqlExpressionVisitor<T> : ExpressionVisitor
                 _root.DistinctClause = new QueryDistinctClause(); // Distinct(objects)
                 break;
             case "OrderBy":
-                _root.OrderByClause = new QueryOrderByClause((QueryAttributeNames)ParseExpression(content),
-                    OrderByDirection.ASCENDING);
+                _root.OrderByClause = QueryOrderByClause(ParseExpression(content), OrderByDirection.ASCENDING);
                 break;
             case "OrderByDescending":
-                _root.OrderByClause = new QueryOrderByClause((QueryAttributeNames)ParseExpression(content),
-                    OrderByDirection.DESCENDING);
+                _root.OrderByClause = QueryOrderByClause(ParseExpression(content), OrderByDirection.DESCENDING);
                 break;
             default:
                 throw new Exception($"I don't know how to convert {node.Method.Name} to SQL ;(");
@@ -88,5 +86,15 @@ public class SqlExpressionVisitor<T> : ExpressionVisitor
     {
         var res = new QueryParameter(param.Value, _root.Keeper);
         return res;
+    }
+
+    private QueryOrderByClause QueryOrderByClause(QueryExpression expression, OrderByDirection direction)
+    {
+        return expression switch
+        {
+            QueryAttributeNames names => new QueryOrderByClause(names, direction),
+            QueryAttributeName name => new QueryOrderByClause(new QueryAttributeNames([name]), direction),
+            _ => throw new Exception("Damn you broke the Order LINQ :/")
+        };
     }
 }

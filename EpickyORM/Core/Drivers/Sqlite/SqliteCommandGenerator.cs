@@ -44,7 +44,7 @@ public class SqliteCommandGenerator : CommandGenerator
             $"* FROM {table.Name}",
             root.WhereClause != null ? GetWhereClause(root.WhereClause) : "",
             root.OrderByClause != null ? GetOrderByClause(root.OrderByClause) : "",
-            root.LimitClause != null ? GetLimitClause(root.LimitClause, root.Keeper) : "",
+            GetLimitClause(root.LimitClause, root.Keeper),
             root.OffsetClause != null ? GetOffsetClause(root.OffsetClause, root.Keeper) : ""
         };
 
@@ -111,7 +111,7 @@ public class SqliteCommandGenerator : CommandGenerator
     {
         return $"@{keeper.GetParamName(value)}";
     }
-    
+
     public override string GetValue(object? value)
     {
         return _converter.FormatValue(value);
@@ -124,8 +124,10 @@ public class SqliteCommandGenerator : CommandGenerator
 
     public override string GetOrderByClause(QueryOrderByClause orderByClause)
     {
+        var order = GetOrderByDirection(orderByClause.OrderDirection);
         return
-            $"ORDER BY {orderByClause.AttributeNames.Parse(this)} {GetOrderByDirection(orderByClause.OrderDirection)}";
+            $"ORDER BY {string.Join(", ", orderByClause.AttributeNames.Names.Select(x =>
+                $"{x.Name} {order}"))}";
     }
 
     public override string GetDistinctClause(QueryDistinctClause distinctClause)
@@ -133,14 +135,15 @@ public class SqliteCommandGenerator : CommandGenerator
         return "DISTINCT";
     }
 
-    public override string GetLimitClause(QueryLimitClause limitClause, ParameterKeeper keeper)
+    public override string GetLimitClause(QueryLimitClause? limitClause, ParameterKeeper keeper)
     {
-        return $"LIMIT {GetParameter(limitClause.Limit, keeper)}";
+        // bez tohodle by nefungoval Offset, zároveň to ničemu nevadí
+        return limitClause != null ? $"LIMIT {GetParameter(limitClause.Limit.Value, keeper)}" : "LIMIT -1";
     }
 
     public override string GetOffsetClause(QueryOffsetClause offsetClause, ParameterKeeper keeper)
     {
-        return $"OFFSET {GetParameter(offsetClause.OffsetCount, keeper)}";
+        return $"OFFSET {GetParameter(offsetClause.OffsetCount.Value, keeper)}";
     }
 
     public override string GetAttributeName(QueryAttributeName attributeName)
@@ -150,7 +153,7 @@ public class SqliteCommandGenerator : CommandGenerator
 
     public override string GetAttributeNames(QueryAttributeNames attributeNames)
     {
-        return $"{string.Join(", ", attributeNames.Names)}";
+        return $"{string.Join(", ", attributeNames.Names.Select(GetAttributeName))}";
     }
 
     public override string GetOrderByDirection(OrderByDirection direction)
