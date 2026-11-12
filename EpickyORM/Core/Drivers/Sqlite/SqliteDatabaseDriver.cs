@@ -119,7 +119,7 @@ public class SqliteDatabaseDriver : DatabaseDriver
                         {
                             // pokud už mám v tabulce Record kterej má stejný id, pak ho nahradím
                             isDuplicate = true;
-                            result.Add(table.GetRecordByPk(value)!); // tady by nemělo být null
+                            result.Add(table.GetRecordByPk(value)); // tady by nemělo být null
                             break;
                         }
 

@@ -1,15 +1,14 @@
 using EpickyORM.Core.Drivers;
 using EpickyORM.Core.Drivers.SQLite;
 using EpickyORM.Core.Structures.Frontend;
-using EpickyORMTest.Mocks;
 
 namespace EpickyORMTest.Core;
 
-public class DbTest
+public class DbTest<T> where T : DbContext
 {
     private string? _path;
     private DatabaseDriver driver;
-    protected Database<MyContext> db;
+    protected Database<T> db;
     
     [SetUp]
     public void Setup()
@@ -21,7 +20,7 @@ public class DbTest
             File.Delete(_path);
         }
         driver = new SqliteDatabaseDriver($"Data Source={_path}");
-        db = new Database<MyContext>(driver);
+        db = new Database<T>(driver);
     }
 
     [TearDown]

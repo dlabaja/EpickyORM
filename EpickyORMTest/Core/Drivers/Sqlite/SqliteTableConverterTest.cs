@@ -1,7 +1,6 @@
 using EpickyORM.Core.Drivers.SQLite;
 using EpickyORM.Core.Enums;
 using EpickyORM.Core.Structures.Backend;
-using EpickyORMTest.Mocks;
 
 namespace EpickyORMTest.Core.Drivers.Sqlite;
 
@@ -30,9 +29,9 @@ public class SqliteTableConverterTest
     [Test]
     public void TestConvertTableAttribute()
     {
-        Assert.That(_converter.ConvertTableAttribute(new SchemaAttribute("id", typeof(int), true, false)), Is.EqualTo("id INTEGER PRIMARY KEY"));
-        Assert.That(_converter.ConvertTableAttribute(new SchemaAttribute("id", typeof(string), true, false)), Is.EqualTo("id TEXT PRIMARY KEY"));
-        Assert.That(_converter.ConvertTableAttribute(new SchemaAttribute("sus", typeof(int), false, false)), Is.EqualTo("sus INTEGER"));
+        Assert.That(_converter.ConvertTableAttribute(new SchemaAttribute("id", typeof(int), true)), Is.EqualTo("id INTEGER PRIMARY KEY"));
+        Assert.That(_converter.ConvertTableAttribute(new SchemaAttribute("id", typeof(string), true)), Is.EqualTo("id TEXT PRIMARY KEY"));
+        Assert.That(_converter.ConvertTableAttribute(new SchemaAttribute("sus", typeof(int), false)), Is.EqualTo("sus INTEGER"));
     }
 
     [Test]

@@ -29,21 +29,6 @@ public class SqlQueryProvider<T> : IQueryProvider
         var visitor = new SqlExpressionVisitor<T>(_table);
         var queryRoot = visitor.Build(expression);
         var result = _driver.Select(_table, queryRoot);
-        if (expression is MethodCallExpression method)
-        {
-            switch (method.Method.Name)
-            {
-                case "Count":
-                    return (TResult)(object)result.Count;
-                case "Any":
-                    return (TResult)(object)(result.Count != 0);
-                case "First":
-                    return (TResult)(object)result.First();
-                default:
-                    throw new Exception("I didn't implement this LINQ yet, I hope you didn't run it on production...");
-            }
-        }
-        
         return (TResult)result.Select(x => x.Instance);
     }
 

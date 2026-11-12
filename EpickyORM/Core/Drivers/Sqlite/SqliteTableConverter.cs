@@ -39,8 +39,8 @@ public class SqliteTableConverter : TableConverter
     public override string ConvertTableAttribute(SchemaAttribute schemaAttribute)
     {
         var pkText = schemaAttribute.IsPk ? "PRIMARY KEY" : "";
-        return $"{schemaAttribute.Name.ToSnakeCase()} {ConvertType(Type.GetTypeCode(schemaAttribute.Type))} {pkText}"
-            .Trim();
+        var type = schemaAttribute.FkType ?? schemaAttribute.Type;
+        return $"{schemaAttribute.Name} {ConvertType(Type.GetTypeCode(type))} {pkText}".Trim();
     }
 
     public override string ConvertTable<T>(Table<T> table)

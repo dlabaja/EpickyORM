@@ -12,7 +12,7 @@ public class Table<T>
     private readonly Dictionary<SchemaAttribute, Func<object, object?>> _getters = new();
     private readonly Dictionary<SchemaAttribute, Action<object, object>> _setters = new();
     private readonly List<Record<T>> _records = [];
-    
+
     // tohle by teoreticky mohla být generická třída, ale pak bych je nemohl spojovat do kolekcí (každá tabulka má jinej typ)
     public Table()
     {
@@ -23,19 +23,30 @@ public class Table<T>
     private Schema GenerateSchema()
     {
         var properties = typeof(T).GetProperties().Where(x => x.GetCustomAttribute<Ignore>() == null).ToList();
-        var fields = typeof(T).GetFields().Where(x => x.GetCustomAttribute<Include>() != null);
-        var primaryKey = typeof(T).GetProperties().FirstOrDefault(x => x.GetCustomAttribute<PrimaryKey>() != null);
-        var relations = properties.Select(x => x.PropertyType)
+        var fields = typeof(T).GetFields().Where(x => x.GetCustomAttribute<Include>() != null).ToList();
+        var primaryKey = GetClassPk(typeof(T));
+
+        var relations = properties
+            .Select(x => x.PropertyType)
+            .Concat(
+                fields.Select(x => x.FieldType))
             .Where(x => x.IsClass && x != typeof(string) && x != typeof(object)).ToList();
+
         if (primaryKey == null)
         {
             throw new Exception("No primary key found");
         }
-        
+
         var schemaAttributes = new List<SchemaAttribute>();
         foreach (var property in properties)
         {
-            var attribute = new SchemaAttribute(property.Name.ToSnakeCase(), property.PropertyType, property.Name == primaryKey.Name, relations.Contains(property.PropertyType));
+            var isFk = relations.Contains(property.PropertyType);
+            var attribute = new SchemaAttribute(
+                property.Name.ToSnakeCase(),
+                property.PropertyType,
+                property.Name == primaryKey.Name,
+                isFk ? GetClassPk(property.PropertyType).PropertyType : null // snad se nestane že někdo udělá Pk jako objekt, ale to se mi fakt nechce řešit
+            );
             schemaAttributes.Add(attribute);
             _getters.Add(attribute, obj => property.GetValue(obj));
             _setters.Add(attribute, (obj, val) => property.SetValue(obj, val));
@@ -43,7 +54,12 @@ public class Table<T>
 
         foreach (var field in fields)
         {
-            var attribute = new SchemaAttribute(field.Name.ToSnakeCase(), field.FieldType, false, relations.Contains(field.FieldType));
+            var isFk = relations.Contains(field.FieldType);
+            var attribute = new SchemaAttribute(
+                field.Name.ToSnakeCase(),
+                field.FieldType,
+                false,
+                isFk ? GetClassPk(field.FieldType).PropertyType : null); // nikdy nemůže být Pk, ten atribut na to ani nejde přidat
             schemaAttributes.Add(attribute);
             _getters.Add(attribute, obj => field.GetValue(obj));
             _setters.Add(attribute, (obj, val) => field.SetValue(obj, val));
@@ -52,21 +68,28 @@ public class Table<T>
         return new Schema(schemaAttributes);
     }
 
+    private PropertyInfo GetClassPk(Type t)
+    {
+        return t.GetProperties().FirstOrDefault(x => x.GetCustomAttribute<PrimaryKey>() != null)
+               ?? throw new Exception("No primary key found");
+    }
+
     public List<(SchemaAttribute x, object?)> GetRecordValues(Record<T> record)
     {
-        return [.. Schema.SchemaAttributes.Select(x => (x, _getters[x].Invoke(record.Instance)))];
+        return [.. Schema.SchemaAttributes.Select(x => (x, GetValue(x, record)))];
     }
 
     public object? GetValue(SchemaAttribute schemaAttribute, Record<T> record)
     {
-        return _getters[schemaAttribute].Invoke(record.Instance);
+        var value = _getters[schemaAttribute].Invoke(record.Instance);
+        if (schemaAttribute.FkType != null)
+        {
+            return GetClassPk(schemaAttribute.Type).GetValue(value);
+        }
+
+        return value;
     }
 
-    public void SetValue(SchemaAttribute schemaAttribute, Record<T> record, object value)
-    {
-        SetValue(schemaAttribute, record, value);
-    }
-    
     public void SetValue(SchemaAttribute schemaAttribute, object instance, object value)
     {
         _setters[schemaAttribute].Invoke(instance, value);
@@ -81,7 +104,7 @@ public class Table<T>
     {
         return _records;
     }
-    
+
     // chtěl jsem si udělat hashset klíčů, ale to bych musel udržovat
     public HashSet<object> GetPks()
     {
@@ -90,12 +113,13 @@ public class Table<T>
 
     public object GetRecordPk(Record<T> record)
     {
-        return GetValue(Schema.GetPrimaryKeyAttribute(), record) ?? throw new Exception("This record has no primary key");
+        return GetValue(Schema.GetPrimaryKeyAttribute(), record) ??
+               throw new Exception("This record has no primary key");
     }
-    
+
     public Record<T>? GetRecordByPk(object pk)
     {
-        return _records.FirstOrDefault(x => GetRecordPk(x) == pk);
+        return _records.FirstOrDefault(x => Equals(GetRecordPk(x), pk)); // == porovnává jenom reference
     }
 
     public void Flush()

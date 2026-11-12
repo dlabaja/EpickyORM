@@ -5,13 +5,14 @@ public class SchemaAttribute
     public string Name { get; }
     public Type Type { get; }
     public bool IsPk { get; }
-    public bool IsRelation { get; }
+    public Type? FkType { get; }
+
     
-    public SchemaAttribute(string name, Type type, bool isPk, bool isRelation)
+    public SchemaAttribute(string name, Type type, bool isPk, Type? fkType = null)
     {
         Name = name;
         Type = type;
         IsPk = isPk;
-        IsRelation = isRelation;
+        FkType = fkType;
     }
 }

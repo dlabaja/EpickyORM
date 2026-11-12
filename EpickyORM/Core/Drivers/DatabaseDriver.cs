@@ -27,6 +27,7 @@ public abstract class DatabaseDriver
     
     public abstract void TryCreateTable<T>(Table<T> table);
     
+    // možná se někdy bude hodit (spíš ne)
     public abstract void DropTable<T>(Table<T> table);
 
     public abstract void Insert<T>(Table<T> table, List<Record<T>> records, ParameterKeeper keeper, out int newId);
