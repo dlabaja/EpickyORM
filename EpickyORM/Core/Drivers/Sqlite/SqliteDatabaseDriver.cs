@@ -117,8 +117,9 @@ public class SqliteDatabaseDriver : DatabaseDriver
                         var value = Convert.ChangeType(reader.GetValue(i), schemaAttribute.Type);
                         if (columnName == pk.Name && pks.Contains(value))
                         {
-                            // pokud už mám v tabulce Record kterej má stejný id, pak přeskakuju
+                            // pokud už mám v tabulce Record kterej má stejný id, pak ho nahradím
                             isDuplicate = true;
+                            result.Add(table.GetRecordByPk(value)!); // tady by nemělo být null
                             break;
                         }
 

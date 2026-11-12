@@ -90,6 +90,11 @@ public class Table<T>
     {
         return GetValue(Schema.GetPrimaryKeyAttribute(), record) ?? throw new Exception("This record has no primary key");
     }
+    
+    public Record<T>? GetRecordByPk(object pk)
+    {
+        return _records.FirstOrDefault(x => GetRecordPk(x) == pk);
+    }
 
     public void Flush()
     {
