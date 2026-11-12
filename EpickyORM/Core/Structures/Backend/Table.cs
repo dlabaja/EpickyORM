@@ -22,9 +22,11 @@ public class Table<T>
 
     private Schema GenerateSchema()
     {
-        var properties = typeof(T).GetProperties().Where(x => x.GetCustomAttribute<Ignore>() == null);
+        var properties = typeof(T).GetProperties().Where(x => x.GetCustomAttribute<Ignore>() == null).ToList();
         var fields = typeof(T).GetFields().Where(x => x.GetCustomAttribute<Include>() != null);
         var primaryKey = typeof(T).GetProperties().FirstOrDefault(x => x.GetCustomAttribute<PrimaryKey>() != null);
+        var relations = properties.Select(x => x.PropertyType)
+            .Where(x => x.IsClass && x != typeof(string) && x != typeof(object)).ToList();
         if (primaryKey == null)
         {
             throw new Exception("No primary key found");
@@ -33,7 +35,7 @@ public class Table<T>
         var schemaAttributes = new List<SchemaAttribute>();
         foreach (var property in properties)
         {
-            var attribute = new SchemaAttribute(property.Name.ToSnakeCase(), property.PropertyType, property.Name == primaryKey.Name);
+            var attribute = new SchemaAttribute(property.Name.ToSnakeCase(), property.PropertyType, property.Name == primaryKey.Name, relations.Contains(property.PropertyType));
             schemaAttributes.Add(attribute);
             _getters.Add(attribute, obj => property.GetValue(obj));
             _setters.Add(attribute, (obj, val) => property.SetValue(obj, val));
@@ -41,7 +43,7 @@ public class Table<T>
 
         foreach (var field in fields)
         {
-            var attribute = new SchemaAttribute(field.Name.ToSnakeCase(), field.FieldType, false);
+            var attribute = new SchemaAttribute(field.Name.ToSnakeCase(), field.FieldType, false, relations.Contains(field.FieldType));
             schemaAttributes.Add(attribute);
             _getters.Add(attribute, obj => field.GetValue(obj));
             _setters.Add(attribute, (obj, val) => field.SetValue(obj, val));

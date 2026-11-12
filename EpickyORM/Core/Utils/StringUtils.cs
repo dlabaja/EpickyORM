@@ -4,17 +4,13 @@ namespace EpickyORM.Core.Utils;
 
 public static class StringUtils
 {
-    // c# 14 novinka
-    extension(string str)
+    public static string ToCamelCase(this string str)
     {
-        public string ToCamelCase()
-        {
-            return JsonNamingPolicy.SnakeCaseLower.ConvertName(str);
-        }
+        return JsonNamingPolicy.SnakeCaseLower.ConvertName(str);
+    }
 
-        public string ToSnakeCase()
-        {
-            return JsonNamingPolicy.CamelCase.ConvertName(str);
-        }
+    public static string ToSnakeCase(this string str)
+    {
+        return JsonNamingPolicy.CamelCase.ConvertName(str);
     }
 }
