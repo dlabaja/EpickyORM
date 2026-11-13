@@ -4,15 +4,16 @@ using EpickyORM.Core.Structures.Linq.QueryModel.Clause;
 
 namespace EpickyORM.Core.Structures.Linq.QueryModel;
 
+// reprezentuje SELECT statement
 public class QueryRoot<T> : QueryExpression
 {
-    public ParameterKeeper Keeper = new ParameterKeeper();
+    public readonly ParameterKeeper Keeper = new();
     public QueryWhereClause? WhereClause { get; set; }
     public QueryOrderByClause? OrderByClause { get; set; }
     public QueryDistinctClause? DistinctClause { get; set; }
     public QueryLimitClause? LimitClause { get; set; }
     public QueryOffsetClause? OffsetClause { get; set; }
-    private Table<T> _table;
+    private readonly Table<T> _table;
 
     public QueryRoot(Table<T> table)
     {

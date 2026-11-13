@@ -5,9 +5,10 @@ using Microsoft.Data.Sqlite;
 
 namespace EpickyORM.Core.Drivers;
 
+// práce s databází
 public abstract class DatabaseDriver
 {
-    public abstract CommandGenerator CommandGenerator { get; }
+    protected abstract CommandGenerator CommandGenerator { get; }
     
     protected readonly string ConnectionString;
 

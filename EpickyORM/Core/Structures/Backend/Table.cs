@@ -4,15 +4,16 @@ using EpickyORM.Core.Utils;
 
 namespace EpickyORM.Core.Structures.Backend;
 
+// tabulka v DB (samozřejmě jen s těmi záznamy co jsou načtené v paměti)
 public class Table<T>
 {
     public string Name { get; }
     public Schema Schema { get; }
+    // gettery s settery atributů získané na začátku přes reflexi, stačí to invoknout s instancí a získám/nastavím hodnotu
     private readonly Dictionary<SchemaAttribute, Func<object, object?>> _getters = new();
     private readonly Dictionary<SchemaAttribute, Action<object, object>> _setters = new();
     private readonly List<Record<T>> _records = [];
 
-    // tohle by teoreticky mohla být generická třída, ale pak bych je nemohl spojovat do kolekcí (každá tabulka má jinej typ)
     public Table()
     {
         Name = typeof(T).Name;
@@ -25,21 +26,15 @@ public class Table<T>
         var fields = typeof(T).GetFields().Where(x => x.GetCustomAttribute<Include>() != null).ToList();
         var primaryKey = GetClassPk(typeof(T));
 
-        var relations = properties
-            .Select(x => x.PropertyType)
-            .Concat(
-                fields.Select(x => x.FieldType))
-            .Where(x => x.IsClass && x != typeof(string) && x != typeof(object)).ToList();
-
         if (primaryKey == null)
         {
             throw new Exception("No primary key found");
         }
 
+        // tvorba atributů a získávání getterů a setterů pro každou prop
         var schemaAttributes = new List<SchemaAttribute>();
         foreach (var property in properties)
         {
-            var isFk = relations.Contains(property.PropertyType);
             var attribute = new SchemaAttribute(
                 property.Name.ToSnakeCase(),
                 property.PropertyType,
@@ -50,6 +45,7 @@ public class Table<T>
             _setters.Add(attribute, (obj, val) => property.SetValue(obj, val));
         }
 
+        // to samé pro fieldy (můžou mít Include atribut)
         foreach (var field in fields)
         {
             var attribute = new SchemaAttribute(
@@ -64,6 +60,7 @@ public class Table<T>
         return new Schema(schemaAttributes);
     }
 
+    // zjístí která property je pk
     private PropertyInfo GetClassPk(Type t)
     {
         return t.GetProperties().FirstOrDefault(x => x.GetCustomAttribute<PrimaryKey>() != null)
@@ -87,7 +84,16 @@ public class Table<T>
 
     public void Add(Record<T> record)
     {
+        if (_records.Contains(record))
+        {
+            return;
+        }
         _records.Add(record);
+    }
+
+    public void Remove(Record<T> record)
+    {
+        _records.Remove(record);
     }
 
     public List<Record<T>> GetRecords()
@@ -112,6 +118,7 @@ public class Table<T>
         return _records.FirstOrDefault(x => Equals(GetRecordPk(x), pk)); // == porovnává jenom reference
     }
 
+    // volá se reflexí, nastaví všechny actiony záznamů na NONE
     public void Flush()
     {
         foreach (var record in _records)

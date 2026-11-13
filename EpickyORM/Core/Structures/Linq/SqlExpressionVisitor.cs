@@ -18,17 +18,20 @@ public class SqlExpressionVisitor<T> : ExpressionVisitor
         _root = new QueryRoot<T>(table);
     }
 
+    // poskládá strom od poslední LINQ metody k první (LIFO)
     public QueryRoot<T> Build(Expression expression)
     {
         Visit(expression);
         return _root;
     }
 
+    // prochází všechny nody co jsou volání metody
     protected override Expression VisitMethodCall(MethodCallExpression node)
     {
         Visit(node.Arguments[0]); // rekurzivně jdu hledat další metody
 
         // Count a podobné mají jen jeden argument = source
+        // hodí se do budoucna kdybych ho chtěl implemetovat
         if (node.Arguments.Count == 1)
         {
             return node;
@@ -52,20 +55,20 @@ public class SqlExpressionVisitor<T> : ExpressionVisitor
                 _root.DistinctClause = new QueryDistinctClause(); // Distinct(objects)
                 break;
             case "OrderBy":
-                _root.OrderByClause = QueryOrderByClause(ParseExpression(content), OrderByDirection.ASCENDING);
+                _root.OrderByClause = QueryOrderByClause(ParseExpression(content), OrderByDirection.ASCENDING); // OrderBy(x => new{x.Id}) / OrderBy(x => x.Id)
                 break;
             case "OrderByDescending":
-                _root.OrderByClause = QueryOrderByClause(ParseExpression(content), OrderByDirection.DESCENDING);
+                _root.OrderByClause = QueryOrderByClause(ParseExpression(content), OrderByDirection.DESCENDING); // OrderByDescending ...
                 break;
             default:
-                throw new Exception($"I don't know how to convert {node.Method.Name} to SQL ;(");
+                throw new Exception($"I don't know how to convert {node.Method.Name} to SQL yet ;(");
         }
 
         return node;
     }
 
-    // x => x.Id == 1
-    // Id == 1
+    //    x => x.Id == 1
+    // -> Id == 1
     private QueryExpression ParseExpression(Expression expr)
     {
         return expr switch
@@ -76,7 +79,7 @@ public class SqlExpressionVisitor<T> : ExpressionVisitor
             LambdaExpression lambda => ParseExpression(lambda.Body), // (e => e.Arg) -> e.Arg
             NewExpression nexp => new QueryAttributeNames(nexp.Arguments
                 .Select(x => (QueryAttributeName)ParseExpression(x)).ToList()), // (x.Atr1, x.Atr2) -> Atr1, Atr2
-            ConstantExpression param => ConstantExpr(param),
+            ConstantExpression param => ConstantExpr(param), // 1, "ahoj", ...
             UnaryExpression unexp => ParseExpression(unexp.Operand), // {x => ...} je unary, s tím jsem moc nepočítal 
             _ => throw new Exception("Unsupported expression")
         };

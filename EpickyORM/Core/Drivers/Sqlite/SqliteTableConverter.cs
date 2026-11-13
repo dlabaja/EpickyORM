@@ -32,6 +32,7 @@ public class SqliteTableConverter : TableConverter
             case TypeCode.Double:
                 return "REAL";
             default:
+                // hlavně objekty
                 throw new Exception($"Cannot save {type} to database");
         }
     }
@@ -50,7 +51,7 @@ public class SqliteTableConverter : TableConverter
     public override string GetSchemaArray<T>(Table<T> table, bool noPk)
     {
         return $"({string.Join(", ", table.Schema.SchemaAttributes
-            .Where(x => noPk ? !x.IsPk : true)
+            .Where(x => noPk ? !x.IsPk : true) // můžu vynechat pk atribut
             .Select(x => x.Name))})";
     }
 
@@ -58,7 +59,7 @@ public class SqliteTableConverter : TableConverter
     {
         return $"({string.Join(", ",
             table.GetRecordValues(record)
-                .Where(x => noPk ? !x.x.IsPk : true)
+                .Where(x => noPk ? !x.x.IsPk : true) // můžu vynechat pk value
                 .Select(x => x.Item2 == null ? $"@{keeper.NullName}" : $"@{keeper.GetParamName(x.Item2)}"))})";
     }
 

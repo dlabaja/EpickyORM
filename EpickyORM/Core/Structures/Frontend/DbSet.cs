@@ -10,10 +10,12 @@ namespace EpickyORM.Core.Structures.Frontend;
 public class DbSet<T> : SqlQueryable<T>
 {
     private readonly ChangeTracker _changeTracker;
+    private readonly Table<T> _table;
 
     public DbSet(Table<T> table, DatabaseDriver driver, ChangeTracker changeTracker) : base(new SqlQueryProvider<T>(table, driver))
     {
         _changeTracker = changeTracker;
+        _table = table;
         CheckPrimaryKey();
         if (_changeTracker == null)
         {
@@ -59,15 +61,13 @@ public class DbSet<T> : SqlQueryable<T>
 
     public void Remove(T instance)
     {
-        if (instance == null)
+        var record = _table.GetRecords().FirstOrDefault(x => Equals(x.Instance, instance));
+        if (record != null)
         {
+            record.RecordAction = RecordAction.REMOVE;
             return;
         }
 
-        var pk = GetPrimaryKeyValue(instance);
-        if (pk != null)
-        {
-            _changeTracker.Add(new Record<T>(instance, RecordAction.REMOVE));
-        }
+        _changeTracker.Add(new Record<T>(instance, RecordAction.REMOVE));
     }
 }

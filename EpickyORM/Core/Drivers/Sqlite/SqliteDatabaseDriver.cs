@@ -10,7 +10,7 @@ namespace EpickyORM.Core.Drivers.SQLite;
 public class SqliteDatabaseDriver : DatabaseDriver
 {
     private readonly CommandGenerator _generator = new SqliteCommandGenerator();
-    public override CommandGenerator CommandGenerator => _generator;
+    protected override CommandGenerator CommandGenerator => _generator;
 
     public SqliteDatabaseDriver(string connectionString) : base(connectionString)
     {
@@ -61,7 +61,7 @@ public class SqliteDatabaseDriver : DatabaseDriver
         });
     }
 
-    // vrací číslo
+    // vrací čísla
     public override List<object?> ExecuteScalar(string[] commands, ParameterKeeper? keeper = null)
     {
         return ExecuteInTransaction((connection, transaction) =>
@@ -85,12 +85,12 @@ public class SqliteDatabaseDriver : DatabaseDriver
         });
     }
 
-    // vrací tabulku
+    // vrací množinu záznamů
     public override List<Record<T>> ExecuteReader<T>(string[] commands, Table<T> table, ParameterKeeper? keeper = null)
     {
         return ExecuteInTransaction((connection, transaction) =>
         {
-            var result = new List<Record<T>>();
+            var results = new List<Record<T>>();
             foreach (var command in commands)
             {
                 using var cmd = new SqliteCommand(command, connection, transaction);
@@ -103,42 +103,51 @@ public class SqliteDatabaseDriver : DatabaseDriver
                 }
 
                 var reader = cmd.ExecuteReader();
-                var pks = table.GetPks();
-                var pk = table.Schema.GetPrimaryKeyAttribute();
-                while (reader.Read())
-                {
-                    var instance = Activator.CreateInstance<T>();
-                    var isDuplicate = false;
-                    for (var i = 0; i < reader.FieldCount; i++)
-                    {
-                        var columnName = reader.GetName(i);
-                        // byl jsem chytrej a schéma atributy se jmenujou stejně jako sloupce
-                        var schemaAttribute = table.Schema.SchemaAttributes.First(x => x.Name == columnName);
-                        var value = Convert.ChangeType(reader.GetValue(i), schemaAttribute.Type);
-                        if (columnName == pk.Name && pks.Contains(value))
-                        {
-                            // pokud už mám v tabulce Record kterej má stejný id, pak ho nahradím
-                            isDuplicate = true;
-                            result.Add(table.GetRecordByPk(value)); // tady by nemělo být null
-                            break;
-                        }
-
-                        table.SetValue(schemaAttribute, instance, Convert.ChangeType(value, schemaAttribute.Type));
-                    }
-
-                    if (isDuplicate)
-                    {
-                        continue;
-                    }
-
-                    var record = new Record<T>(instance, RecordAction.NONE);
-                    table.Add(record);
-                    result.Add(record);
-                }
+                var pks = table.GetPks(); // hodnoty všech pk v tabulce
+                var pk = table.Schema.GetPrimaryKeyAttribute(); // jméno pk sloupce
+                ProcessReaderResults(reader, table, results, pks, pk);
             }
 
-            return result;
+            return results;
         });
+    }
+
+    // projde výsledek Readeru a udělá z něho množinu záznamů
+    private void ProcessReaderResults<T>(SqliteDataReader reader, Table<T> table, List<Record<T>> results, HashSet<object> pks, SchemaAttribute pk)
+    {
+        while (reader.Read())
+        {
+            var instance = Activator.CreateInstance<T>();
+            var isDuplicate = false;
+            for (var i = 0; i < reader.FieldCount; i++)
+            {
+                var columnName = reader.GetName(i);
+                // byl jsem chytrej a schéma atributy se jmenujou stejně jako sloupce
+                var schemaAttribute = table.Schema.SchemaAttributes.First(x => x.Name == columnName);
+                var value = Convert.ChangeType(reader.GetValue(i), schemaAttribute.Type);
+                
+                // jsem v pk sloupci a pk s touhle hodnotou už v paměti je
+                // -> přeskočím záznam a do výsledků dám ten v paměti
+                if (columnName == pk.Name && pks.Contains(value))
+                {
+                    // pokud už mám v tabulce Record kterej má stejný id, pak ho nahradím
+                    isDuplicate = true;
+                    results.Add(table.GetRecordByPk(value)); // tady by nemělo být null
+                    break;
+                }
+
+                table.SetValue(schemaAttribute, instance, Convert.ChangeType(value, schemaAttribute.Type));
+            }
+
+            if (isDuplicate)
+            {
+                continue;
+            }
+
+            var record = new Record<T>(instance, RecordAction.NONE);
+            table.Add(record);
+            results.Add(record);
+        }
     }
 
     public override void TryCreateTable<T>(Table<T> table)

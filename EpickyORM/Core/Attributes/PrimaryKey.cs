@@ -1,7 +1,4 @@
 namespace EpickyORM.Core.Attributes;
 
 [AttributeUsage(AttributeTargets.Property)]
-public class PrimaryKey : Attribute
-{
-    
-}
+public class PrimaryKey : Attribute;

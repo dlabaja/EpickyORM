@@ -8,6 +8,7 @@ public class Database<T> where T : DbContext
 
     public Database(DatabaseDriver driver)
     {
+        // tvorba kontextu
         Context = Activator.CreateInstance<T>();
         Context.Init(driver);
     }

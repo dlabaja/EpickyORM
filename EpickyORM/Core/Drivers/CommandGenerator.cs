@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using EpickyORM.Core.Enums;
-using EpickyORM.Core.Structures;
 using EpickyORM.Core.Structures.Backend;
 using EpickyORM.Core.Structures.Linq.QueryModel;
 using EpickyORM.Core.Structures.Linq.QueryModel.Clause;
@@ -8,6 +7,7 @@ using EpickyORM.Core.Structures.Linq.QueryModel.Primitive;
 
 namespace EpickyORM.Core.Drivers;
 
+// generuje příkazy pro obecnou práci s databází
 public abstract class CommandGenerator
 {
     public abstract string TryCreateTable<T>(Table<T> table);

@@ -1,5 +1,7 @@
 namespace EpickyORM.Core.Structures.Backend;
 
+// třída mapující hodnoty na parametry
+// stačí ji předat některé z metod Driveru
 public class ParameterKeeper
 {
     private int _currentId = 1;
@@ -9,6 +11,7 @@ public class ParameterKeeper
 
     private readonly Dictionary<string, (object? Value, string Name)> _paramMapper = new(); // value.ToString -> (value, paramName)
 
+    // udělá si záznam o parametru (pokud neexistuje) a vrátí jméno parametru
     public string GetParamName(object? value)
     {
         if (value?.ToString() == null)

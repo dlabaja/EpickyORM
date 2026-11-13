@@ -2,6 +2,7 @@ using EpickyORM.Core.Structures.Backend;
 
 namespace EpickyORM.Core.Drivers;
 
+// převádí tabulku, schéma a atributy na části SQL dotazů
 public abstract class TableConverter
 {
     public abstract string ConvertType(TypeCode type);
@@ -16,7 +17,7 @@ public abstract class TableConverter
 
     public abstract string GetMultipleValuesArray<T>(Table<T> table, List<Record<T>> records, ParameterKeeper keeper, bool noPk);
 
-    public abstract string FormatValue(Object obj);
+    public abstract string FormatValue(object obj);
 
     public abstract string GetSetArray<T>(Table<T> table, Record<T> record, ParameterKeeper keeper);
     

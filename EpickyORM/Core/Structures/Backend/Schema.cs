@@ -1,5 +1,6 @@
 ﻿namespace EpickyORM.Core.Structures.Backend;
 
+// schéma databáze
 public class Schema
 {
     public List<SchemaAttribute> SchemaAttributes { get; }

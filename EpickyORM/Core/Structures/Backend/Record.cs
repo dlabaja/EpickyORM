@@ -2,6 +2,7 @@ using EpickyORM.Core.Enums;
 
 namespace EpickyORM.Core.Structures.Backend;
 
+// záznam/řádek v tabulce
 public class Record<T>
 {
     public T Instance { get; }

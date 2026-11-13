@@ -17,13 +17,13 @@ public class SqlQueryProvider<T> : IQueryProvider
         _driver = driver;
     }
     
-    // umožňuje LINQ chaining -> zabalí výraz do nové IQueryable
+    // umožňuje řetězení
     public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
     {
         return new SqlQueryable<TElement>(this, expression);
     }
     
-    // zavolá se po vyhodnocení LINQ - TResult může být kolekce nebo číslo (Count)
+    // zavolá se po vyhodnocení LINQ - zatím vrací kolekci, kdybych implementoval Count tak může vracet i číslo
     public TResult Execute<TResult>(Expression expression)
     {
         var visitor = new SqlExpressionVisitor<T>(_table);

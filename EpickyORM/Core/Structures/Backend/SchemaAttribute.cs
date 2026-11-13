@@ -1,5 +1,6 @@
 namespace EpickyORM.Core.Structures.Backend;
 
+// třída pro sloupec v databázi
 public class SchemaAttribute
 {
     public string Name { get; }

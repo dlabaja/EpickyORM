@@ -7,6 +7,7 @@ using System.Text;
 namespace EpickyORM.Core.Structures.Backend;
 
 // tahle třída je důvod proč mám radši TypeScript, striktní typy jsou strašně omezující, pomoc
+// ukládá všechny tabulky a otisky záznamů (objektů v nich)
 public class ChangeTracker
 {
     public List<dynamic> Tables => [.. _tables.Values];
@@ -17,6 +18,8 @@ public class ChangeTracker
     private JsonSerializerOptions _options = new()
     {
         IncludeFields = true,
+        // místo cyklu nastaví problémové pole na null (při tvorbě otisku mi to nevadí)
+        // spíš do budoucna, zatím nemám vazby a objekty proto ukládat nemůžu
         ReferenceHandler = ReferenceHandler.IgnoreCycles
     };
 
@@ -42,6 +45,7 @@ public class ChangeTracker
         GetTable<T>().Add(record);
     }
 
+    // porovná hashe původního a aktuálního stavu instance a řekne, zda se objekt změnil
     public bool ObjectChanged(object instance)
     {
         if (!_snapshots.TryGetValue(instance, out var hash))
@@ -52,17 +56,19 @@ public class ChangeTracker
         return hash != Hash(instance);
     }
 
-    public Table<T> GetTable<T>()
+    private Table<T> GetTable<T>()
     {
         return (Table<T>)_tables[typeof(T)];
     }
 
-    // tohle se actually používá, ale přes reflexi takže to nejde vidět
+    // tohle se actually používá (v DbContext), ale přes reflexi takže to nejde vidět
     public List<Record<T>> GetRecords<T>(RecordAction action)
     {
         return GetTable<T>().GetRecords().Where(x => x.RecordAction == action).ToList();
     }
 
+    // ošklivou generikou Flushne všechny záznamy ve všech tabulkách
+    // používá se po uložení do DB
     public void Flush()
     {
         foreach (var table in Tables)

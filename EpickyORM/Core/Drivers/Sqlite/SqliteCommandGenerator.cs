@@ -90,7 +90,7 @@ public class SqliteCommandGenerator : CommandGenerator
         return expressionType switch
         {
             ExpressionType.Equal => "=",
-            ExpressionType.NotEqual => "<>", // nebo i !=
+            ExpressionType.NotEqual => "<>", // nebo !=
             ExpressionType.GreaterThan => ">",
             ExpressionType.GreaterThanOrEqual => ">=",
             ExpressionType.LessThan => "<",
@@ -137,8 +137,9 @@ public class SqliteCommandGenerator : CommandGenerator
 
     public override string GetLimitClause(QueryLimitClause? limitClause, ParameterKeeper keeper)
     {
-        // bez tohodle by nefungoval Offset, zároveň to ničemu nevadí
-        return limitClause != null ? $"LIMIT {GetParameter(limitClause.Limit.Value, keeper)}" : "LIMIT -1";
+        return limitClause != null 
+            ? $"LIMIT {GetParameter(limitClause.Limit.Value, keeper)}" 
+            : "LIMIT -1"; // bez tohodle by nefungoval Offset, zároveň to ničemu nevadí
     }
 
     public override string GetOffsetClause(QueryOffsetClause offsetClause, ParameterKeeper keeper)
