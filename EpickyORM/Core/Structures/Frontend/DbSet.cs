@@ -51,7 +51,8 @@ public class DbSet<T> : SqlQueryable<T>
 
         var pk = GetPrimaryKeyValue(instance);
         // klíč může být i int nebo teoreticky i string. C# ho ale vnímá jako objekt (default = null), proto ho ještě musím porovnat s defaultní hodnotou konkrétního typu
-        bool isDefault = pk == null || pk.Equals(Activator.CreateInstance(pk.GetType()));
+        // defaultní hodnota = přidej, jinak zkus přidat/updatni
+        var isDefault = pk == null || pk.Equals(Activator.CreateInstance(pk.GetType()));
         var record = new Record<T>(instance, isDefault ? RecordAction.ADD : RecordAction.UPDATE);
         _changeTracker.Add(record);
     }
