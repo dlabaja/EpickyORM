@@ -9,4 +9,4 @@ Podporuje základní LINQ (Where, Distinct, Limit, Skip, OrderBy), další jdou 
 
 Chtěl jsem přidat i podporu pro vazby (ukládání objektů v objektech), ale po týdnu v kuse co programuju už na to nemám sílu
 
-Další info v Program.cs :)
+Další info v EpickyORM/Program.cs :)
